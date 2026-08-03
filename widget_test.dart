@@ -1,12 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../lib/src/analysis_engine.dart';
-import '../lib/src/app.dart';
-import '../lib/src/app_state.dart';
-import '../lib/src/chart.dart';
-import '../lib/src/demo_data.dart';
-import '../lib/src/local_store.dart';
+import 'package:elliott_vision/elliott_vision.dart';
 
 void main() {
   testWidgets('Startseite und Analyse sind erreichbar', (tester) async {

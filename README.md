@@ -98,6 +98,6 @@ flutter run
 
 ## Status
 
-Version: `0.1.0+1`  
+Version: `0.1.2+3`  
 Stand: 3. August 2026  
 Modus: Android-MVP mit Demo-Daten

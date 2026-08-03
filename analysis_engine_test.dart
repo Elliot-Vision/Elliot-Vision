@@ -1,7 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-
-import '../lib/src/analysis_engine.dart';
-import '../lib/src/demo_data.dart';
+import 'package:elliott_vision/elliott_vision.dart';
 
 void main() {
   group('RuleBasedDemoAnalysisGateway', () {
