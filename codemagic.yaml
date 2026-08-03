@@ -1,0 +1,72 @@
+workflows:
+  android-mvp:
+    name: Elliott Vision Android MVP
+    max_build_duration: 60
+    # Free-tier machine; it can build Android APKs as well as iOS apps.
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      java: 17
+    scripts:
+      - name: Android-Projektdateien erzeugen
+        script: |
+          if [ ! -d android ]; then
+            flutter create \
+              --platforms=android \
+              --android-language=kotlin \
+              --org de.elliottvision \
+              --project-name elliott_vision \
+              .
+          fi
+          perl -pi -e 's/android:label="elliott_vision"/android:label="Elliott Vision"/' \
+            android/app/src/main/AndroidManifest.xml
+          if ! grep -q 'android.permission.INTERNET' android/app/src/main/AndroidManifest.xml; then
+            perl -0pi -e 's#(<manifest[^>]*>)#$1\n    <uses-permission android:name="android.permission.INTERNET" />#' \
+              android/app/src/main/AndroidManifest.xml
+          fi
+      - name: Abhängigkeiten installieren
+        script: flutter pub get
+      - name: Projektstruktur prüfen
+        script: |
+          missing=0
+          for file in \
+            pubspec.yaml \
+            lib/main.dart \
+            lib/elliott_vision.dart \
+            lib/src/analysis_engine.dart \
+            lib/src/app.dart \
+            lib/src/app_state.dart \
+            lib/src/chart.dart \
+            lib/src/demo_data.dart \
+            lib/src/formatters.dart \
+            lib/src/local_store.dart \
+            lib/src/live_market_data.dart \
+            lib/src/models.dart \
+            lib/src/screens.dart \
+            test/analysis_engine_test.dart \
+            test/app_state_test.dart \
+            test/live_market_data_test.dart \
+            test/widget_test.dart
+          do
+            if [ ! -s "$file" ]; then
+              echo "FEHLT ODER IST LEER: $file"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Der GitHub-Upload ist unvollständig. Fehlende Dateien erneut hochladen."
+            exit 1
+          fi
+          echo "Projektstruktur vollständig."
+      - name: Quellcode analysieren
+        script: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Tests ausführen
+        script: flutter test
+      - name: Release-APK bauen
+        script: |
+          flutter build apk --release
+          shasum -a 256 build/app/outputs/flutter-apk/app-release.apk \
+            > build/app/outputs/flutter-apk/app-release.apk.sha256
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      - build/app/outputs/flutter-apk/app-release.apk.sha256
