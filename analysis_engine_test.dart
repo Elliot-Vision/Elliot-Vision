@@ -1,6 +1,7 @@
-import 'package:elliott_vision/src/analysis_engine.dart';
-import 'package:elliott_vision/src/demo_data.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../lib/src/analysis_engine.dart';
+import '../lib/src/demo_data.dart';
 
 void main() {
   group('RuleBasedDemoAnalysisGateway', () {

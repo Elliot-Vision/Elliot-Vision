@@ -1,13 +1,16 @@
-import 'package:elliott_vision/src/analysis_engine.dart';
-import 'package:elliott_vision/src/app_state.dart';
-import 'package:elliott_vision/src/demo_data.dart';
-import 'package:elliott_vision/src/local_store.dart';
-import 'package:elliott_vision/src/models.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../lib/src/analysis_engine.dart';
+import '../lib/src/app_state.dart';
+import '../lib/src/demo_data.dart';
+import '../lib/src/local_store.dart';
+import '../lib/src/models.dart';
 
 void main() {
   test('Favoriten, Position und Snapshot werden gespeichert', () async {
-    final store = _MemoryStore();
+    SharedPreferences.setMockInitialValues({});
+    final store = SharedPreferencesLocalStore();
     final state = AppState(
       marketData: DemoMarketDataRepository(),
       analysisGateway: RuleBasedDemoAnalysisGateway(),
@@ -35,38 +38,8 @@ void main() {
     expect(state.isFavorite('uec'), isTrue);
     expect(state.holdings, hasLength(1));
     expect(state.history, hasLength(1));
-    expect(store.favoriteIds, contains('uec'));
-    expect(store.holdings.single.quantity, 10);
-    expect(store.history.single.instrumentId, 'uec');
+    expect(await store.loadFavorites(), contains('uec'));
+    expect((await store.loadHoldings()).single.quantity, 10);
+    expect((await store.loadHistory()).single.instrumentId, 'uec');
   });
-}
-
-class _MemoryStore implements LocalStore {
-  Set<String> favoriteIds = {};
-  List<Holding> holdings = [];
-  List<AnalysisResult> history = [];
-
-  @override
-  Future<Set<String>> loadFavorites() async => Set.of(favoriteIds);
-
-  @override
-  Future<List<Holding>> loadHoldings() async => List.of(holdings);
-
-  @override
-  Future<List<AnalysisResult>> loadHistory() async => List.of(history);
-
-  @override
-  Future<void> saveFavorites(Set<String> ids) async {
-    favoriteIds = Set.of(ids);
-  }
-
-  @override
-  Future<void> saveHoldings(List<Holding> value) async {
-    holdings = List.of(value);
-  }
-
-  @override
-  Future<void> saveHistory(List<AnalysisResult> value) async {
-    history = List.of(value);
-  }
 }

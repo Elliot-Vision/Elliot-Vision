@@ -1,18 +1,20 @@
-import 'package:elliott_vision/src/analysis_engine.dart';
-import 'package:elliott_vision/src/app.dart';
-import 'package:elliott_vision/src/app_state.dart';
-import 'package:elliott_vision/src/chart.dart';
-import 'package:elliott_vision/src/demo_data.dart';
-import 'package:elliott_vision/src/local_store.dart';
-import 'package:elliott_vision/src/models.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../lib/src/analysis_engine.dart';
+import '../lib/src/app.dart';
+import '../lib/src/app_state.dart';
+import '../lib/src/chart.dart';
+import '../lib/src/demo_data.dart';
+import '../lib/src/local_store.dart';
 
 void main() {
   testWidgets('Startseite und Analyse sind erreichbar', (tester) async {
+    SharedPreferences.setMockInitialValues({});
     final state = AppState(
       marketData: DemoMarketDataRepository(),
       analysisGateway: RuleBasedDemoAnalysisGateway(),
-      store: _EmptyStore(),
+      store: SharedPreferencesLocalStore(),
     );
     await state.initialize();
 
@@ -27,24 +29,4 @@ void main() {
     expect(find.text('Handelsplatz'), findsOneWidget);
     expect(find.byType(ElliottScenarioChart), findsOneWidget);
   });
-}
-
-class _EmptyStore implements LocalStore {
-  @override
-  Future<Set<String>> loadFavorites() async => {};
-
-  @override
-  Future<List<Holding>> loadHoldings() async => [];
-
-  @override
-  Future<List<AnalysisResult>> loadHistory() async => [];
-
-  @override
-  Future<void> saveFavorites(Set<String> ids) async {}
-
-  @override
-  Future<void> saveHoldings(List<Holding> holdings) async {}
-
-  @override
-  Future<void> saveHistory(List<AnalysisResult> history) async {}
 }

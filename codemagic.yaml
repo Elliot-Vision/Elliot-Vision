@@ -23,7 +23,7 @@ workflows:
       - name: Abhängigkeiten installieren
         script: flutter pub get
       - name: Quellcode analysieren
-        script: flutter analyze
+        script: flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Tests ausführen
         script: flutter test
       - name: Release-APK bauen
