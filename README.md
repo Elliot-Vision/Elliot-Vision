@@ -1,90 +1,103 @@
-# Elliott Vision Flutter App – MVP
+# Elliott Vision – Android MVP
 
-Dieses Paket enthält den Flutter-Quellcode für eine Android-App mit:
+Elliott Vision ist eine Flutter-App zum transparenten Vergleichen mehrerer
+Elliott-Wellen-Szenarien. Dieser Stand ist ein lauffähiger MVP mit lokal
+gespeicherten Favoriten, Depotpositionen und Analyse-Snapshots.
 
-- Suche nach ISIN, Name und Kürzel
+## Was im MVP funktioniert
+
+- Suche nach ISIN, Wertpapiername oder Ticker
+- Auswahl des Handelsplatzes und des Chart-Zeitraums
+- Darstellung von Originalkurs, Euro-Kurs und verwendetem Wechselkurs
+- Chart mit historischem Verlauf und gleichzeitig einblendbaren bullischen,
+  neutralen und bärischen Szenarien
+- Wahrscheinlichkeit, Score, Kursziel und Invalidierungsmarke je Szenario
+- Kennzeichnung eines Hauptszenarios
 - Favoritenliste
-- Depotpositionen mit Kaufdatum, Kaufpreis und Stückzahl
-- Euro-Anzeige
-- Chart mit Allzeithoch, Allzeittief und drei Prognoseszenarien
-- vereinfachter Elliott-Wellen-Heuristik
-- lokaler Speicherung auf dem Gerät
+- persönliches Depot mit Kaufdatum, Kaufpreis und Stückzahl
+- Analysehistorie als datierter Snapshot
+- Speicherung von Datenstand, Analyseversion, Modell- und Promptinformation
+- Lernbereich und Risikohinweis
+- minimalistisches Finanz-App-Design
 
-## Wichtig
+## Wichtige MVP-Grenze
 
-Die enthaltenen Kurse sind reproduzierbare Demo-Daten. Für echte Börsendaten muss `DemoMarketDataService` später durch einen lizenzierten Datenanbieter ersetzt werden. Die Analyse ist keine Anlageberatung.
+Alle Kurse, Wechselkurse und Analysen sind deutlich als **Demo-Daten**
+gekennzeichnet. Der MVP beweist Bedienung, Speicherung, Chart-Overlays und
+Architektur. Er behauptet keine aktuellen Marktwerte und gibt keine
+Anlageberatung.
 
-## Projekt erzeugen und starten
+Der nächste technische Schritt ist die Anbindung eines lizenzierten
+Marktdatenanbieters und eines eigenen Backends. Ein OpenAI-API-Schlüssel darf
+niemals in die Flutter-App, die APK oder das Git-Repository gelangen. Das
+vorgesehene Produktionsdesign steht in [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md).
 
-1. Flutter SDK und Android Studio installieren.
-2. Einen neuen Ordner öffnen und in diesem Ordner ausführen:
+## Projektstruktur
 
-```bash
-flutter create --platforms=android .
+```text
+lib/
+  main.dart                 App-Start
+  src/
+    app.dart                Theme und App-Scope
+    app_state.dart          Favoriten, Depot und Historie
+    models.dart             Domänenmodelle und Snapshots
+    demo_data.dart          klar gekennzeichnete Beispieldaten
+    analysis_engine.dart    regelbasierter Demo-Analysator
+    local_store.dart        lokale Speicherung
+    chart.dart              eigener Szenario-Chart
+    screens.dart            vollständige MVP-Oberfläche
+test/                       Kern- und Widgettests
+codemagic.yaml              Cloud-Build der Android-APK
 ```
 
-3. Danach die Dateien aus diesem Paket in das Projekt kopieren beziehungsweise vorhandene Dateien überschreiben.
-4. Abhängigkeiten laden:
+## Android-APK mit Codemagic bauen
 
-```bash
+Das Repository enthält bewusst keine generierten Android-Plattformdateien.
+Codemagic erzeugt sie reproduzierbar vor jedem Build.
+
+1. Den Inhalt dieses Projekts in das GitHub-Repository hochladen.
+2. Das Repository in Codemagic als Flutter-Projekt auswählen.
+3. Codemagic erkennt `codemagic.yaml`.
+4. Workflow **Elliott Vision Android MVP** starten.
+5. Nach erfolgreichem Build unter **Artifacts**
+   `app-release.apk` herunterladen.
+6. Die APK auf dem Android-Gerät öffnen und die Installation aus dieser Quelle
+   einmalig erlauben.
+
+Der Workflow führt automatisch aus:
+
+```text
+flutter create --platforms=android ...
 flutter pub get
-```
-
-5. App prüfen:
-
-```bash
 flutter analyze
 flutter test
-```
-
-6. Samsung per USB verbinden, USB-Debugging aktivieren und starten:
-
-```bash
-flutter run
-```
-
-## APK bauen
-
-```bash
 flutter build apk --release
 ```
 
-Die APK befindet sich anschließend hier:
+Zusätzlich wird eine SHA-256-Prüfsumme für die APK erzeugt.
+
+## Lokal starten (optional)
+
+Voraussetzung: aktuelles Flutter-SDK.
 
 ```text
-build/app/outputs/flutter-apk/app-release.apk
+flutter create --platforms=android --org de.elliottvision \
+  --project-name elliott_vision .
+flutter pub get
+flutter test
+flutter run
 ```
 
-Diese Datei auf das Samsung-Gerät übertragen und öffnen. Android fragt gegebenenfalls nach der Erlaubnis, Apps aus dieser Quelle zu installieren.
+## Sicherheit
 
-## Nächster technischer Schritt
+- `.env`, `.env.local`, Keystores und `key.properties` sind ignoriert.
+- `.env.example` enthält nur leere Platzhalter.
+- Der Flutter-Code liest und enthält keinen OpenAI-API-Schlüssel.
+- Spätere OpenAI-Aufrufe laufen ausschließlich über ein eigenes Backend.
+- Das Backend validiert strukturierte Analyseantworten gegen ein festes Schema.
 
-Für eine reale Version werden benötigt:
+## Status
 
-- Wertpapier-Stammdaten-Service für ISIN → Symbol/Handelsplatz
-- Kursdaten-API mit historischen Tageskursen
-- Devisenkurse zur Umrechnung in EUR
-- robustere Pivot-/ZigZag-Erkennung und Elliott-Regelprüfung
-- verschlüsselte Speicherung sensibler Depotdaten
-- Signierung und optional Veröffentlichung im Google Play Store
-
-
-## Version 0.2 UI Prototype
-- minimalistisches helles Finanz-App-Design
-- bullisch/neutral/bärisch mit Analyse-Score
-- mehrere ein-/ausblendbare Wellenzählungen
-- Fibonacci-Ebene
-- Analysehistorie
-- Wissensbereich/FAQ
-
-## Automatischer Android-Build über GitHub Actions
-
-Nach jedem Upload auf den Branch `main` oder `master` startet GitHub automatisch einen Build.
-
-1. Im Repository den Reiter **Actions** öffnen.
-2. Den Workflow **Build Android APK** auswählen.
-3. Nach erfolgreichem Lauf den Build öffnen.
-4. Unter **Artifacts** die Datei **elliott-vision-android-apk** herunterladen.
-5. ZIP entpacken und `app-release.apk` auf dem Android-Gerät installieren.
-
-Der Workflow kann außerdem über **Run workflow** manuell gestartet werden.
+Version: `0.1.0+1`  
+Stand: 3. August 2026  
+Modus: Android-MVP mit Demo-Daten
