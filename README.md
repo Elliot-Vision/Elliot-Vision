@@ -76,3 +76,15 @@ Für eine reale Version werden benötigt:
 - Fibonacci-Ebene
 - Analysehistorie
 - Wissensbereich/FAQ
+
+## Automatischer Android-Build über GitHub Actions
+
+Nach jedem Upload auf den Branch `main` oder `master` startet GitHub automatisch einen Build.
+
+1. Im Repository den Reiter **Actions** öffnen.
+2. Den Workflow **Build Android APK** auswählen.
+3. Nach erfolgreichem Lauf den Build öffnen.
+4. Unter **Artifacts** die Datei **elliott-vision-android-apk** herunterladen.
+5. ZIP entpacken und `app-release.apk` auf dem Android-Gerät installieren.
+
+Der Workflow kann außerdem über **Run workflow** manuell gestartet werden.
