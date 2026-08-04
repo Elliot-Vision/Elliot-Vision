@@ -1,0 +1,145 @@
+definitions:
+  scripts:
+    - &create_android
+      name: Android-Projekt reproduzierbar erzeugen
+      script: |
+        if [ ! -d android ]; then
+          android_template_dir="$(mktemp -d)"
+          flutter create \
+            --platforms=android \
+            --android-language=kotlin \
+            --org de.elliottvision \
+            --project-name elliott_vision \
+            "$android_template_dir"
+          cp -R "$android_template_dir/android" .
+        fi
+        python3 tool/configure_android_ci.py
+    - &verify_repository
+      name: GitHub-Upload auf Vollstaendigkeit pruefen
+      script: |
+        missing=0
+        for file in \
+          pubspec.yaml \
+          codemagic.yaml \
+          lib/main.dart \
+          lib/elliott_vision.dart \
+          lib/src/analysis_engine.dart \
+          lib/src/app.dart \
+          lib/src/app_state.dart \
+          lib/src/chart.dart \
+          lib/src/demo_data.dart \
+          lib/src/formatters.dart \
+          lib/src/knowledge_data.dart \
+          lib/src/local_store.dart \
+          lib/src/live_market_data.dart \
+          lib/src/models.dart \
+          lib/src/screens.dart \
+          test/analysis_engine_test.dart \
+          test/app_state_test.dart \
+          test/durable_store_test.dart \
+          test/knowledge_data_test.dart \
+          test/live_market_data_test.dart \
+          test/models_test.dart \
+          test/widget_test.dart \
+          tool/configure_android_ci.py
+        do
+          if [ ! -s "$file" ]; then
+            echo "FEHLT ODER IST LEER: $file"
+            missing=1
+          fi
+        done
+        if [ "$missing" -ne 0 ]; then
+          echo "Der GitHub-Upload ist unvollstaendig."
+          exit 1
+        fi
+        echo "Projektstruktur vollstaendig."
+
+workflows:
+  android-check:
+    name: 1 - Code pruefen (ohne Release-Key)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      java: 17
+    scripts:
+      - *create_android
+      - name: Abhaengigkeiten installieren
+        script: flutter pub get
+      - *verify_repository
+      - name: Quellcode analysieren
+        script: flutter analyze
+      - name: Tests ausfuehren
+        script: flutter test
+      - name: Test-APK bauen
+        script: flutter build apk --debug
+    artifacts:
+      - build/app/outputs/flutter-apk/app-debug.apk
+
+  android-release:
+    name: 3 - Signiertes Android-Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      java: 17
+      android_signing:
+        - elliott_vision_keystore
+    scripts:
+      - *create_android
+      - name: Release-Signierung pruefen
+        script: |
+          test -n "$CM_KEYSTORE_PATH"
+          test -n "$CM_KEYSTORE_PASSWORD"
+          test -n "$CM_KEY_ALIAS"
+          test -n "$CM_KEY_PASSWORD"
+          test -s android/key.properties
+      - name: Abhaengigkeiten installieren
+        script: flutter pub get
+      - *verify_repository
+      - name: Quellcode analysieren
+        script: flutter analyze
+      - name: Tests ausfuehren
+        script: flutter test
+      - name: Signierte APK und AAB bauen
+        script: |
+          flutter build apk --release
+          flutter build appbundle --release
+          shasum -a 256 build/app/outputs/flutter-apk/app-release.apk \
+            > build/app/outputs/flutter-apk/app-release.apk.sha256
+          shasum -a 256 build/app/outputs/bundle/release/app-release.aab \
+            > build/app/outputs/bundle/release/app-release.aab.sha256
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      - build/app/outputs/flutter-apk/app-release.apk.sha256
+      - build/app/outputs/bundle/release/app-release.aab
+      - build/app/outputs/bundle/release/app-release.aab.sha256
+
+  create-signing-key:
+    name: 2 - Signierschluessel einmalig erzeugen
+    max_build_duration: 15
+    instance_type: mac_mini_m2
+    environment:
+      java: 17
+      groups:
+        - elliott_vision_key_generation
+    scripts:
+      - name: Privaten Android-Schluessel erzeugen
+        script: |
+          test -n "$KEYSTORE_PASSWORD"
+          test -n "$KEY_PASSWORD"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_DNAME"
+          mkdir -p build/signing
+          keytool -genkeypair -noprompt \
+            -keystore build/signing/elliott-vision-upload.jks \
+            -storetype JKS \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -keypass "$KEY_PASSWORD" \
+            -alias "$KEY_ALIAS" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "$KEY_DNAME"
+    artifacts:
+      - build/signing/elliott-vision-upload.jks
