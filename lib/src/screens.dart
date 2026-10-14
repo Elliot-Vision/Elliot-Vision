@@ -8,6 +8,7 @@ import 'chart.dart';
 import 'formatters.dart';
 import 'knowledge_data.dart';
 import 'models.dart';
+import 'test_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -25,6 +26,7 @@ class _HomeShellState extends State<HomeShell> {
     PortfolioScreen(),
     HistoryScreen(),
     LearnScreen(),
+    TestScreen(),
   ];
 
   @override
@@ -71,6 +73,11 @@ class _HomeShellState extends State<HomeShell> {
               color: AppPalette.onAccent,
             ),
             label: 'Wissen',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.science_outlined),
+            selectedIcon: Icon(Icons.science, color: AppPalette.onAccent),
+            label: 'Test',
           ),
         ],
       ),

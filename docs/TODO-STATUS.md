@@ -2,6 +2,13 @@
 
 Stand: Version 0.4.1+7
 
+## Entwicklungsbranch EV-018 / EV-019
+
+- Separater Test-Tab mit eigenen, sichtbar gekennzeichneten Demodaten.
+- Stufenloser horizontaler Zoom ausschließlich im experimentellen Chart.
+- Reguläre Analyse bleibt unverändert; Geräteabnahme noch ausstehend.
+- Vollständiger Abgleich: [Repository-Prüfung](REPOSITORY-ABGLEICH-EV018-EV019.md).
+
 ## In der App umgesetzt
 
 - Bullische, neutrale und bärische Szenarien einzeln ein-/ausblendbar

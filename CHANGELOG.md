@@ -1,3 +1,9 @@
+# Unveröffentlicht – EV-018 / EV-019
+
+- Isolierter Test-Tab mit Demodaten.
+- Stufenloser Chart-Zoom, Verschieben und Reset nur im Testbereich.
+- Repository-Abgleich und sechs neue Regressionstests.
+
 # Änderungsprotokoll
 
 ## 0.4.1+7 – 4. August 2026
