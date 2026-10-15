@@ -69,6 +69,42 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
   bool _restored = false;
   int? _selectedIndex;
   bool _selectedProjection = false;
+  final Map<int, Offset> _inspectionTouches = {};
+  bool _inspectionSuppressed = false;
+
+  void _inspectionDown(PointerDownEvent event, double width) {
+    _inspectionTouches[event.pointer] = event.localPosition;
+    if (_inspectionTouches.length == 1) {
+      _inspectionSuppressed = false;
+      _inspect(event.localPosition, width);
+    } else {
+      _inspectionSuppressed = true;
+      setState(() {
+        _selectedIndex = null;
+        _selectedProjection = false;
+      });
+    }
+  }
+
+  void _inspectionMove(PointerMoveEvent event, double width) {
+    final start = _inspectionTouches[event.pointer];
+    if (_inspectionSuppressed ||
+        _inspectionTouches.length != 1 ||
+        start == null) {
+      return;
+    }
+    final delta = event.localPosition - start;
+    if (delta.dy.abs() > kTouchSlop && delta.dy.abs() > delta.dx.abs()) {
+      _inspectionSuppressed = true;
+      return;
+    }
+    _inspect(event.localPosition, width);
+  }
+
+  void _inspectionEnd(PointerEvent event) {
+    _inspectionTouches.remove(event.pointer);
+    if (_inspectionTouches.isEmpty) _inspectionSuppressed = false;
+  }
 
   void _inspect(Offset position, double width) {
     final fraction =
@@ -173,61 +209,64 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
               builder: (context, constraints) => GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onDoubleTap: () => _setViewport(const ChartViewport()),
-                child: RawGestureDetector(
-                  key: const ValueKey('chart-gestures'),
+                child: Listener(
                   behavior: HitTestBehavior.opaque,
-                  gestures: {
-                    _ChartScaleGestureRecognizer:
-                        GestureRecognizerFactoryWithHandlers<
-                            _ChartScaleGestureRecognizer>(
-                      () => _ChartScaleGestureRecognizer(),
-                      (recognizer) {
-                        recognizer
-                          ..onStart = (details) {
-                            _gestureStart = _viewport;
-                            _focalStart = _focalFraction(
-                              details.localFocalPoint,
-                              constraints.maxWidth,
-                            );
-                            if (details.pointerCount == 1) {
-                              _inspect(details.localFocalPoint,
-                                  constraints.maxWidth);
+                  onPointerDown: (event) =>
+                      _inspectionDown(event, constraints.maxWidth),
+                  onPointerMove: (event) =>
+                      _inspectionMove(event, constraints.maxWidth),
+                  onPointerUp: _inspectionEnd,
+                  onPointerCancel: _inspectionEnd,
+                  child: RawGestureDetector(
+                    key: const ValueKey('chart-gestures'),
+                    behavior: HitTestBehavior.opaque,
+                    gestures: {
+                      _ChartScaleGestureRecognizer:
+                          GestureRecognizerFactoryWithHandlers<
+                              _ChartScaleGestureRecognizer>(
+                        () => _ChartScaleGestureRecognizer(),
+                        (recognizer) {
+                          recognizer
+                            ..onStart = (details) {
+                              _gestureStart = _viewport;
+                              _focalStart = _focalFraction(
+                                details.localFocalPoint,
+                                constraints.maxWidth,
+                              );
                             }
-                          }
-                          ..onUpdate = (details) {
-                            if (details.pointerCount < 2) {
-                              _inspect(details.localFocalPoint,
-                                  constraints.maxWidth);
-                              return;
-                            }
-                            _setViewport(
-                              _viewport.transform(
-                                initial: _gestureStart,
-                                scale: details.scale,
-                                initialFocal: _focalStart,
-                                currentFocal: _focalFraction(
-                                  details.localFocalPoint,
-                                  constraints.maxWidth,
+                            ..onUpdate = (details) {
+                              if (details.pointerCount < 2) {
+                                return;
+                              }
+                              _setViewport(
+                                _viewport.transform(
+                                  initial: _gestureStart,
+                                  scale: details.scale,
+                                  initialFocal: _focalStart,
+                                  currentFocal: _focalFraction(
+                                    details.localFocalPoint,
+                                    constraints.maxWidth,
+                                  ),
                                 ),
-                              ),
-                            );
-                          };
-                      },
-                    ),
-                  },
-                  child: SizedBox.expand(
-                      child: CustomPaint(
-                    key: const ValueKey('scenario-chart-paint'),
-                    painter: _ChartPainter(
-                      instrument: widget.instrument,
-                      analysis: widget.analysis,
-                      visibleScenarioIds: visibleIds,
-                      historyPoints: widget.historyPoints,
-                      showZones: widget.showZones,
-                      viewport: _viewport,
-                      selectedIndex: _selectedIndex,
-                    ),
-                  )),
+                              );
+                            };
+                        },
+                      ),
+                    },
+                    child: SizedBox.expand(
+                        child: CustomPaint(
+                      key: const ValueKey('scenario-chart-paint'),
+                      painter: _ChartPainter(
+                        instrument: widget.instrument,
+                        analysis: widget.analysis,
+                        visibleScenarioIds: visibleIds,
+                        historyPoints: widget.historyPoints,
+                        showZones: widget.showZones,
+                        viewport: _viewport,
+                        selectedIndex: _selectedIndex,
+                      ),
+                    )),
+                  ),
                 ),
               ),
             ),
