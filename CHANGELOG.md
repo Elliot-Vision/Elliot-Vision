@@ -1,5 +1,7 @@
 # Unveröffentlicht – EV-018 / EV-019
 
+- Test-Tab mit Demo-Wertpapierauswahl, sieben Zeiträumen, einzelnen Szenarioschaltern und Zonenschalter erweitert.
+- Offene Geräteprobleme: Einfinger-Kursabfrage noch nicht abgenommen; letzte Korrektur dafür zurückgenommen.
 - Isolierter Test-Tab mit Demodaten.
 - Stufenloser Chart-Zoom, Verschieben und Reset nur im Testbereich.
 - Repository-Abgleich und sechs neue Regressionstests.

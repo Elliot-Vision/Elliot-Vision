@@ -5,8 +5,11 @@ Stand: Version 0.4.1+7
 ## Entwicklungsbranch EV-018 / EV-019
 
 - Separater Test-Tab mit eigenen, sichtbar gekennzeichneten Demodaten.
+- Demo-Wertpapierauswahl, sieben Zeiträume, Szenarien einzeln schaltbar und Zonen ein-/ausblendbar.
 - Stufenloser horizontaler Zoom ausschließlich im experimentellen Chart.
-- Reguläre Analyse bleibt unverändert; Geräteabnahme noch ausstehend.
+- Zoom und Scrollen auf dem zurückgenommenen Stand auf Android bestätigt; Verschieben und Reset zuvor ebenfalls bestätigt.
+- Geräteprüfung der neuen Auswahlmöglichkeiten ausstehend; Einfinger-Kursabfrage weiterhin offen.
+- Reguläre Analyse bleibt unverändert.
 - Vollständiger Abgleich: [Repository-Prüfung](REPOSITORY-ABGLEICH-EV018-EV019.md).
 
 ## In der App umgesetzt
