@@ -4,6 +4,111 @@ import 'package:elliott_vision/elliott_vision.dart';
 import 'package:elliott_vision/src/experimental_chart.dart';
 
 void main() {
+  Future<void> showChart(WidgetTester tester) async {
+    final instrument = DemoMarketDataRepository().byId('aapl');
+    final analysis = RuleBasedAnalysisGateway().analyze(instrument);
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: ListView(children: [
+      ExperimentalScenarioChart(
+          instrument: instrument,
+          analysis: analysis,
+          visibleScenarioIds: analysis.scenarios.map((s) => s.id).toSet(),
+          historyPoints: instrument.pricePoints.length),
+      const SizedBox(height: 1000)
+    ]))));
+  }
+
+  for (final location in [
+    const Offset(0.2, 0.15),
+    const Offset(0.5, 0.5),
+    const Offset(0.8, 0.85)
+  ]) {
+    testWidgets('Pinch greift auf gesamter Chartfläche $location',
+        (tester) async {
+      await showChart(tester);
+      final rect = tester.getRect(find.byKey(const ValueKey('chart-gestures')));
+      final center = rect.topLeft +
+          Offset(rect.width * location.dx, rect.height * location.dy);
+      final first =
+          await tester.startGesture(center - const Offset(0, 16), pointer: 1);
+      final second =
+          await tester.startGesture(center + const Offset(0, 16), pointer: 2);
+      await tester.pump();
+      await first.moveTo(center - const Offset(0, 42));
+      await second.moveTo(center + const Offset(0, 42));
+      await tester.pump();
+      expect(find.text('Zurücksetzen (1.0×)'), findsNothing);
+      await first.up();
+      await second.up();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets(
+      'Ein Finger liest echte historische Kurse und kennzeichnet Projektion',
+      (tester) async {
+    await showChart(tester);
+    final rect = tester.getRect(find.byKey(const ValueKey('chart-gestures')));
+    final points = DemoMarketDataRepository().byId('aapl').pricePoints;
+    final finger =
+        await tester.startGesture(rect.topLeft + const Offset(58, 150));
+    await finger.moveTo(rect.topLeft + const Offset(100, 150));
+    await tester.pump();
+    final x = 58 + (rect.width - 72) * 0.32;
+    await finger.moveTo(rect.topLeft + Offset(x, 150));
+    await tester.pump();
+    final index = ((points.length - 1) / 2).round();
+    final label = tester
+        .widget<Text>(find.byKey(const ValueKey('chart-inspection')))
+        .data!;
+    expect(
+        label,
+        contains(
+            '${points[index].euro.toStringAsFixed(2).replaceAll('.', ',')} €'));
+    expect(find.text('Zurücksetzen (1.0×)'), findsOneWidget);
+    await finger
+        .moveTo(rect.topLeft + Offset(58 + (rect.width - 72) * 0.9, 150));
+    await tester.pump();
+    expect(find.text('Projektion – kein historischer Kurs'), findsOneWidget);
+    await finger.up();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Zoom, Zweifinger-Pan und Doppeltipp funktionieren nacheinander',
+      (tester) async {
+    await showChart(tester);
+    final rect = tester.getRect(find.byKey(const ValueKey('chart-gestures')));
+    final center = rect.center;
+    final first =
+        await tester.startGesture(center - const Offset(25, 0), pointer: 1);
+    final second =
+        await tester.startGesture(center + const Offset(25, 0), pointer: 2);
+    await first.moveTo(center - const Offset(75, 0));
+    await second.moveTo(center + const Offset(75, 0));
+    await tester.pump();
+    expect(find.text('Zurücksetzen (3.0×)'), findsOneWidget);
+    final paint = find.byKey(const ValueKey('scenario-chart-paint'));
+    final before = tester.widget<CustomPaint>(paint).painter!;
+    await first.moveTo(center - const Offset(125, 0));
+    await second.moveTo(center + const Offset(25, 0));
+    await tester.pump();
+    expect(find.text('Zurücksetzen (3.0×)'), findsOneWidget);
+    expect(tester.widget<CustomPaint>(paint).painter!.shouldRepaint(before),
+        isTrue);
+    await first.up();
+    await second.up();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tapAt(center);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tapAt(center);
+    await tester.pumpAndSettle();
+    expect(find.text('Zurücksetzen (1.0×)'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   test('kontinuierlicher Zoom bleibt am Fokus verankert und begrenzt', () {
     const full = ChartViewport();
     final zoomed = full.transform(

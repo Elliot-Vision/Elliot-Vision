@@ -67,6 +67,35 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
   ChartViewport _gestureStart = const ChartViewport();
   double _focalStart = 0;
   bool _restored = false;
+  int? _selectedIndex;
+  bool _selectedProjection = false;
+
+  void _inspect(Offset position, double width) {
+    final fraction =
+        _viewport.start + _focalFraction(position, width) * _viewport.span;
+    final points = widget.instrument.pricePoints;
+    final start = math.max(0, points.length - widget.historyPoints);
+    setState(() {
+      _selectedProjection = fraction > 0.64;
+      _selectedIndex = _selectedProjection || start >= points.length
+          ? null
+          : start +
+              (fraction / 0.64 * (points.length - start - 1))
+                  .round()
+                  .clamp(0, points.length - start - 1);
+    });
+  }
+
+  String get _inspectionLabel {
+    if (_selectedProjection) return 'Projektion – kein historischer Kurs';
+    if (_selectedIndex == null) return 'Mit einem Finger einen Kurs auswählen';
+    final point = widget.instrument.pricePoints[_selectedIndex!];
+    final date = point.timestamp.toLocal();
+    String two(int value) => value.toString().padLeft(2, '0');
+    return '${point.euro.toStringAsFixed(2).replaceAll('.', ',')} € · '
+        '${two(date.day)}.${two(date.month)}.${date.year} '
+        '${two(date.hour)}:${two(date.minute)}';
+  }
 
   String get _storageId => 'chart-viewport-${widget.instrument.id}-'
       '${widget.instrument.selectedSymbol}-${widget.instrument.timeframe.name}';
@@ -92,6 +121,8 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
             widget.instrument.selectedSymbol ||
         oldWidget.instrument.timeframe != widget.instrument.timeframe) {
       _viewport = const ChartViewport();
+      _selectedIndex = null;
+      _selectedProjection = false;
       PageStorage.maybeOf(context)?.writeState(
         context,
         _viewport,
@@ -101,7 +132,11 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
   }
 
   void _setViewport(ChartViewport value) {
-    setState(() => _viewport = value);
+    setState(() {
+      _viewport = value;
+      _selectedIndex = null;
+      _selectedProjection = false;
+    });
     PageStorage.maybeOf(context)?.writeState(
       context,
       value,
@@ -117,6 +152,15 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
     final visibleIds = Set<String>.unmodifiable(widget.visibleScenarioIds);
     return Column(
       children: [
+        SizedBox(
+          height: 52,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(_inspectionLabel,
+                key: const ValueKey('chart-inspection'),
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        ),
         Semantics(
           label: 'Kurschart für ${widget.instrument.name} im Zeitraum '
               '${widget.instrument.timeframe.label} mit '
@@ -127,6 +171,7 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
             width: double.infinity,
             child: LayoutBuilder(
               builder: (context, constraints) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onDoubleTap: () => _setViewport(const ChartViewport()),
                 child: RawGestureDetector(
                   key: const ValueKey('chart-gestures'),
@@ -144,22 +189,34 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
                               details.localFocalPoint,
                               constraints.maxWidth,
                             );
+                            if (details.pointerCount == 1) {
+                              _inspect(details.localFocalPoint,
+                                  constraints.maxWidth);
+                            }
                           }
-                          ..onUpdate = (details) => _setViewport(
-                                _viewport.transform(
-                                  initial: _gestureStart,
-                                  scale: details.scale,
-                                  initialFocal: _focalStart,
-                                  currentFocal: _focalFraction(
-                                    details.localFocalPoint,
-                                    constraints.maxWidth,
-                                  ),
+                          ..onUpdate = (details) {
+                            if (details.pointerCount < 2) {
+                              _inspect(details.localFocalPoint,
+                                  constraints.maxWidth);
+                              return;
+                            }
+                            _setViewport(
+                              _viewport.transform(
+                                initial: _gestureStart,
+                                scale: details.scale,
+                                initialFocal: _focalStart,
+                                currentFocal: _focalFraction(
+                                  details.localFocalPoint,
+                                  constraints.maxWidth,
                                 ),
-                              );
+                              ),
+                            );
+                          };
                       },
                     ),
                   },
-                  child: CustomPaint(
+                  child: SizedBox.expand(
+                      child: CustomPaint(
                     key: const ValueKey('scenario-chart-paint'),
                     painter: _ChartPainter(
                       instrument: widget.instrument,
@@ -168,8 +225,9 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
                       historyPoints: widget.historyPoints,
                       showZones: widget.showZones,
                       viewport: _viewport,
+                      selectedIndex: _selectedIndex,
                     ),
-                  ),
+                  )),
                 ),
               ),
             ),
@@ -179,7 +237,7 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
           children: [
             const Expanded(
               child: Text(
-                'Mit zwei Fingern zoomen · Ausschnitt verschieben',
+                'Ein Finger: Kurs · Zwei Finger: Zoom und Verschieben',
                 style: TextStyle(color: AppPalette.muted, fontSize: 10),
               ),
             ),
@@ -197,9 +255,10 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
 }
 
 /// Ein Finger vertikal scrollt weiterhin die Analyseseite.
-/// Horizontales Verschieben und Gesten mit zwei Fingern gehören dem Chart.
+/// Horizontales Ablesen und Gesten mit zwei Fingern gehören dem Chart.
 class _ChartScaleGestureRecognizer extends ScaleGestureRecognizer {
   final Map<int, Offset> _starts = {};
+  bool _multiTouch = false;
 
   @override
   void addAllowedPointer(PointerDownEvent event) {
@@ -209,7 +268,10 @@ class _ChartScaleGestureRecognizer extends ScaleGestureRecognizer {
 
   @override
   void handleEvent(PointerEvent event) {
-    if (event is PointerMoveEvent && _starts.length == 1) {
+    if (event is PointerDownEvent && _starts.length >= 2) {
+      _multiTouch = true;
+    }
+    if (event is PointerMoveEvent && !_multiTouch && _starts.length == 1) {
       final start = _starts[event.pointer];
       if (start != null) {
         final delta = event.position - start;
@@ -220,6 +282,9 @@ class _ChartScaleGestureRecognizer extends ScaleGestureRecognizer {
       }
     }
     super.handleEvent(event);
+    if (event is PointerDownEvent && _multiTouch) {
+      resolve(GestureDisposition.accepted);
+    }
     if (event is PointerUpEvent || event is PointerCancelEvent) {
       _starts.remove(event.pointer);
     }
@@ -228,6 +293,7 @@ class _ChartScaleGestureRecognizer extends ScaleGestureRecognizer {
   @override
   void didStopTrackingLastPointer(int pointer) {
     _starts.clear();
+    _multiTouch = false;
     super.didStopTrackingLastPointer(pointer);
   }
 }
@@ -240,6 +306,7 @@ class _ChartPainter extends CustomPainter {
     required this.historyPoints,
     required this.showZones,
     required this.viewport,
+    this.selectedIndex,
   });
 
   final Instrument instrument;
@@ -248,6 +315,7 @@ class _ChartPainter extends CustomPainter {
   final int historyPoints;
   final bool showZones;
   final ChartViewport viewport;
+  final int? selectedIndex;
 
   double _x(double original, double left, double right) =>
       left +
@@ -492,6 +560,20 @@ class _ChartPainter extends CustomPainter {
       fontWeight: FontWeight.w800,
     );
 
+    if (selectedIndex != null && history.length > 1) {
+      final localIndex = selectedIndex! - startIndex;
+      if (localIndex >= 0 && localIndex < history.length) {
+        final x = xFor(0.64 * localIndex / (history.length - 1));
+        final y = yFor(history[localIndex].euro);
+        final markerPaint = Paint()
+          ..color = AppPalette.ink
+          ..strokeWidth = 1;
+        canvas.drawLine(
+            Offset(x, top), Offset(x, top + plotHeight), markerPaint);
+        canvas.drawLine(Offset(left, y), Offset(plotRight, y), markerPaint);
+        canvas.drawCircle(Offset(x, y), 5, Paint()..color = AppPalette.blue);
+      }
+    }
     canvas.restore();
     _drawXAxis(canvas, history, left, originalHistoryEnd, plotRight,
         top + plotHeight + 9);
@@ -757,7 +839,8 @@ class _ChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ChartPainter oldDelegate) {
-    return oldDelegate.viewport.start != viewport.start ||
+    return oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.viewport.start != viewport.start ||
         oldDelegate.viewport.end != viewport.end ||
         oldDelegate.instrument.id != instrument.id ||
         oldDelegate.instrument.dataTimestamp != instrument.dataTimestamp ||

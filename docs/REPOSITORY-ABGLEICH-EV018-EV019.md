@@ -46,6 +46,10 @@ Bedienabläufe zu erhalten. Diese Abweichung vom älteren Plan bleibt sichtbar.
 - Pinch-Zoom ist kontinuierlich zwischen 1x und 20x; horizontaler Drag
   verschiebt den Ausschnitt innerhalb der Datenränder. Reset und Doppeltippen
   stellen die Übersicht wieder her. Ein Finger vertikal scrollt die Seite.
+  Nach dem Gerätetest ergänzt: Ein Finger horizontal zeigt den nächsten
+  historischen Datenpunkt mit Kurs, Datum/Uhrzeit und Fadenkreuz an.
+  Zwei Finger übernehmen Zoom und Verschieben; Projektionen werden ausdrücklich
+  als solche gekennzeichnet und liefern keinen historischen Kurs.
 - Verlauf, Projektionen, Zonen und Wellenmarkierungen werden gemeinsam
   horizontal transformiert und am Plot begrenzt. Die Euro-Achse bleibt stabil,
   die Zeitbeschriftungen folgen dem sichtbaren historischen Ausschnitt.
@@ -63,7 +67,7 @@ Flutter 3.44.0 / Dart 3.12.0, festgeschriebene pubspec.lock:
 
 - flutter pub get --enforce-lockfile: erfolgreich.
 - flutter analyze --no-pub: ohne Befund.
-- flutter test --no-pub: 25 Tests erfolgreich (19 bestehende, 6 neue).
+- flutter test --no-pub: 30 Tests erfolgreich (19 bestehende, 11 neue).
 - Neue Tests: Fokusverankerung, Zoomgrenzen, Pan-Grenzen, echte Pinch-Geste,
   Neuzeichnung und Filtererhalt, Reset, Zeitraumwechsel, vertikales Scrollen,
   Navigation bei 390 Pixel Breite und unveränderte gespeicherte App-Daten.

@@ -3,6 +3,8 @@
 - Isolierter Test-Tab mit Demodaten.
 - Stufenloser Chart-Zoom, Verschieben und Reset nur im Testbereich.
 - Repository-Abgleich und sechs neue Regressionstests.
+- Kurs und Datum/Uhrzeit beim horizontalen Ablesen mit einem Finger, inklusive Fadenkreuz; Projektionen separat gekennzeichnet.
+- Zwei Finger übernehmen Zoom und Verschieben auf der gesamten Chartfläche; fünf zusätzliche Gesten- und Ablesetests.
 
 # Änderungsprotokoll
 
