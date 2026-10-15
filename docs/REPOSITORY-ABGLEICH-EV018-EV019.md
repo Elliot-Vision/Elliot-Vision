@@ -67,7 +67,7 @@ Flutter 3.44.0 / Dart 3.12.0, festgeschriebene pubspec.lock:
 
 - flutter pub get --enforce-lockfile: erfolgreich.
 - flutter analyze --no-pub: ohne Befund.
-- flutter test --no-pub: 32 Tests erfolgreich (19 bestehende, 13 neue).
+- flutter test --no-pub: 30 Tests erfolgreich (19 bestehende, 11 neue).
 - Neue Tests: Fokusverankerung, Zoomgrenzen, Pan-Grenzen, echte Pinch-Geste,
   Neuzeichnung und Filtererhalt, Reset, Zeitraumwechsel, vertikales Scrollen,
   Navigation bei 390 Pixel Breite und unveränderte gespeicherte App-Daten.

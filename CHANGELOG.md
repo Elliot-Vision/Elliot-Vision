@@ -1,6 +1,5 @@
 # Unveröffentlicht – EV-018 / EV-019
 
-- Kursabfrage reagiert sofort beim Auflegen und auf kleine Fingerbewegungen, auch nach dem Zoomen; zwei zusätzliche Regressionstests.
 - Isolierter Test-Tab mit Demodaten.
 - Stufenloser Chart-Zoom, Verschieben und Reset nur im Testbereich.
 - Repository-Abgleich und sechs neue Regressionstests.

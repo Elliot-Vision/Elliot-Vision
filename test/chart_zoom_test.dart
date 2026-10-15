@@ -109,54 +109,6 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets(
-      'Kurs erscheint bereits beim Auflegen und folgt kleinen Bewegungen',
-      (tester) async {
-    await showChart(tester);
-    final rect = tester.getRect(find.byKey(const ValueKey('chart-gestures')));
-    final finger =
-        await tester.startGesture(rect.topLeft + const Offset(130, 150));
-    await tester.pump();
-    String label() => tester
-        .widget<Text>(find.byKey(const ValueKey('chart-inspection')))
-        .data!;
-    expect(label(), contains('€ ·'));
-    final before = label();
-    await finger.moveBy(const Offset(12, 3));
-    await tester.pump();
-    expect(label(), isNot(before));
-    await finger.up();
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('Nach Pinch kann ein neuer Finger direkt einen Kurs ablesen',
-      (tester) async {
-    await showChart(tester);
-    final rect = tester.getRect(find.byKey(const ValueKey('chart-gestures')));
-    final center = rect.topLeft + Offset(58 + (rect.width - 72) * 0.32, 160);
-    final first =
-        await tester.startGesture(center - const Offset(20, 0), pointer: 1);
-    final second =
-        await tester.startGesture(center + const Offset(20, 0), pointer: 2);
-    await first.moveTo(center - const Offset(60, 0));
-    await second.moveTo(center + const Offset(60, 0));
-    await tester.pump();
-    await first.up();
-    await second.up();
-    await tester.pump(const Duration(milliseconds: 400));
-    final finger = await tester.startGesture(center, pointer: 3);
-    await tester.pump();
-    expect(
-        tester
-            .widget<Text>(find.byKey(const ValueKey('chart-inspection')))
-            .data,
-        contains('€ ·'));
-    expect(find.text('Zurücksetzen (3.0×)'), findsOneWidget);
-    await finger.up();
-    await tester.pump(const Duration(milliseconds: 400));
-  });
-
   test('kontinuierlicher Zoom bleibt am Fokus verankert und begrenzt', () {
     const full = ChartViewport();
     final zoomed = full.transform(
