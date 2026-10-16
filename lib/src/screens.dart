@@ -2443,319 +2443,330 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-Future<void> _showAddHoldingSheet(BuildContext context, AppState state) async {
-  final searchController = TextEditingController();
-  final priceController = TextEditingController();
-  final quantityController = TextEditingController();
-  final noteController = TextEditingController();
-  Timer? searchTimer;
-  var searchRequest = 0;
-  var searchResults = state.marketData.instruments.take(5).toList();
-  var isSearching = false;
-  String? searchError;
-  Instrument? selectedInstrument;
-  var purchaseDate = DateTime.now();
-
-  await showModalBottomSheet<void>(
+Future<void> _showAddHoldingSheet(BuildContext context, AppState state) {
+  return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: AppPalette.background,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
-    builder: (sheetContext) {
-      return StatefulBuilder(
-        builder: (context, setSheetState) {
-          return Padding(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              12,
-              20,
-              24 + MediaQuery.viewInsetsOf(context).bottom,
+    builder: (_) => _AddHoldingSheet(state: state),
+  );
+}
+
+class _AddHoldingSheet extends StatefulWidget {
+  const _AddHoldingSheet({required this.state});
+  final AppState state;
+
+  @override
+  State<_AddHoldingSheet> createState() => _AddHoldingSheetState();
+}
+
+class _AddHoldingSheetState extends State<_AddHoldingSheet> {
+  AppState get state => widget.state;
+  final searchController = TextEditingController();
+  final priceController = TextEditingController();
+  final quantityController = TextEditingController();
+  final noteController = TextEditingController();
+  Timer? searchTimer;
+  var searchRequest = 0;
+  late var searchResults = state.marketData.instruments.take(5).toList();
+  var isSearching = false;
+  String? searchError;
+  Instrument? selectedInstrument;
+  var purchaseDate = DateTime.now();
+
+  @override
+  void dispose() {
+    searchTimer?.cancel();
+    searchRequest++;
+    searchController.dispose();
+    priceController.dispose();
+    quantityController.dispose();
+    noteController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        24 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppPalette.line,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
             ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 42,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppPalette.line,
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  const Text(
-                    'Position hinzufügen',
-                    style: TextStyle(
-                      color: AppPalette.ink,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  TextField(
-                    key: const ValueKey('holding-instrument-search'),
-                    controller: searchController,
-                    textInputAction: TextInputAction.search,
-                    onChanged: (value) {
-                      searchTimer?.cancel();
-                      final query = value.trim();
-                      final request = ++searchRequest;
-                      if (query.isEmpty) {
-                        setSheetState(() {
-                          isSearching = false;
-                          searchError = null;
-                          selectedInstrument = null;
-                          searchResults =
-                              state.marketData.instruments.take(5).toList();
-                        });
+            const SizedBox(height: 22),
+            const Text(
+              'Position hinzufügen',
+              style: TextStyle(
+                color: AppPalette.ink,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              key: const ValueKey('holding-instrument-search'),
+              controller: searchController,
+              textInputAction: TextInputAction.search,
+              onChanged: (value) {
+                searchTimer?.cancel();
+                final query = value.trim();
+                final request = ++searchRequest;
+                if (query.isEmpty) {
+                  setState(() {
+                    isSearching = false;
+                    searchError = null;
+                    selectedInstrument = null;
+                    searchResults =
+                        state.marketData.instruments.take(5).toList();
+                  });
+                  return;
+                }
+                setState(() {
+                  isSearching = true;
+                  searchError = null;
+                  selectedInstrument = null;
+                });
+                searchTimer = Timer(
+                  const Duration(milliseconds: 450),
+                  () async {
+                    try {
+                      final results = await state.searchInstruments(query);
+                      if (!mounted || request != searchRequest) {
                         return;
                       }
-                      setSheetState(() {
-                        isSearching = true;
-                        searchError = null;
-                        selectedInstrument = null;
+                      setState(() {
+                        searchResults = results;
+                        isSearching = false;
                       });
-                      searchTimer = Timer(
-                        const Duration(milliseconds: 450),
-                        () async {
-                          try {
-                            final results =
-                                await state.searchInstruments(query);
-                            if (!sheetContext.mounted ||
-                                request != searchRequest) {
-                              return;
-                            }
-                            setSheetState(() {
-                              searchResults = results;
-                              isSearching = false;
-                            });
-                          } on Object {
-                            if (!sheetContext.mounted ||
-                                request != searchRequest) {
-                              return;
-                            }
-                            setSheetState(() {
-                              searchResults = const [];
-                              isSearching = false;
-                              searchError =
-                                  'Die Wertpapiersuche ist gerade nicht erreichbar.';
-                            });
-                          }
-                        },
-                      );
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Wertpapier suchen',
-                      hintText: 'ISIN, Name oder Ticker',
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      suffixIcon: searchController.text.isEmpty
-                          ? null
-                          : IconButton(
-                              tooltip: 'Suche leeren',
-                              onPressed: () {
-                                searchTimer?.cancel();
-                                searchRequest++;
-                                searchController.clear();
-                                setSheetState(() {
-                                  isSearching = false;
-                                  searchError = null;
-                                  selectedInstrument = null;
-                                  searchResults = state.marketData.instruments
-                                      .take(5)
-                                      .toList();
-                                });
-                              },
-                              icon: const Icon(Icons.close_rounded),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  if (isSearching)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 18),
-                      child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  else if (searchError != null)
-                    _StatusNotice(
-                      icon: Icons.cloud_off_rounded,
-                      text: searchError!,
-                    )
-                  else if (searchResults.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Text(
-                        'Kein Wertpapier gefunden.',
-                        style: TextStyle(color: AppPalette.muted),
-                      ),
-                    )
-                  else
-                    ...searchResults.take(5).map(
-                          (instrument) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _HoldingInstrumentOption(
-                              instrument: instrument,
-                              selected: selectedInstrument?.id == instrument.id,
-                              onSelected: () => setSheetState(
-                                () => selectedInstrument = instrument,
-                              ),
-                            ),
-                          ),
-                        ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: priceController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: const InputDecoration(
-                            labelText: 'Kaufpreis in €',
-                            hintText: '0,00',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: quantityController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: const InputDecoration(
-                            labelText: 'Stückzahl',
-                            hintText: '0',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _SurfaceCard(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        firstDate: DateTime(1990),
-                        lastDate: DateTime.now(),
-                        initialDate: purchaseDate,
-                      );
-                      if (!context.mounted) {
+                    } on Object {
+                      if (!mounted || request != searchRequest) {
                         return;
                       }
-                      if (picked != null) {
-                        setSheetState(() => purchaseDate = picked);
-                      }
-                    },
-                    child: Row(
+                      setState(() {
+                        searchResults = const [];
+                        isSearching = false;
+                        searchError =
+                            'Die Wertpapiersuche ist gerade nicht erreichbar.';
+                      });
+                    }
+                  },
+                );
+              },
+              decoration: InputDecoration(
+                labelText: 'Wertpapier suchen',
+                hintText: 'ISIN, Name oder Ticker',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: searchController.text.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Suche leeren',
+                        onPressed: () {
+                          searchTimer?.cancel();
+                          searchRequest++;
+                          searchController.clear();
+                          setState(() {
+                            isSearching = false;
+                            searchError = null;
+                            selectedInstrument = null;
+                            searchResults =
+                                state.marketData.instruments.take(5).toList();
+                          });
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            if (isSearching)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 18),
+                child: Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else if (searchError != null)
+              _StatusNotice(
+                icon: Icons.cloud_off_rounded,
+                text: searchError!,
+              )
+            else if (searchResults.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'Kein Wertpapier gefunden.',
+                  style: TextStyle(color: AppPalette.muted),
+                ),
+              )
+            else
+              ...searchResults.take(5).map(
+                    (instrument) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _HoldingInstrumentOption(
+                        instrument: instrument,
+                        selected: selectedInstrument?.id == instrument.id,
+                        onSelected: () => setState(
+                          () => selectedInstrument = instrument,
+                        ),
+                      ),
+                    ),
+                  ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: priceController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Kaufpreis in €',
+                      hintText: '0,00',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: quantityController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Stückzahl',
+                      hintText: '0',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _SurfaceCard(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  firstDate: DateTime(1990),
+                  lastDate: DateTime.now(),
+                  initialDate: purchaseDate,
+                );
+                if (!context.mounted) {
+                  return;
+                }
+                if (picked != null) {
+                  setState(() => purchaseDate = picked);
+                }
+              },
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_month_outlined),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.calendar_month_outlined),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'KAUFDATUM',
-                                style: TextStyle(
-                                  color: AppPalette.muted,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                shortDate(purchaseDate),
-                                style: const TextStyle(
-                                  color: AppPalette.ink,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
+                        const Text(
+                          'KAUFDATUM',
+                          style: TextStyle(
+                            color: AppPalette.muted,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const Icon(Icons.chevron_right_rounded),
+                        const SizedBox(height: 3),
+                        Text(
+                          shortDate(purchaseDate),
+                          style: const TextStyle(
+                            color: AppPalette.ink,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: noteController,
-                    decoration: const InputDecoration(
-                      labelText: 'Notiz (optional)',
-                      hintText: 'Zum Beispiel Sparplan',
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  FilledButton(
-                    onPressed: () async {
-                      final instrument = selectedInstrument;
-                      if (instrument == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Bitte zuerst ein Wertpapier auswählen.',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      final price = double.tryParse(
-                        priceController.text.trim().replaceAll(',', '.'),
-                      );
-                      final quantity = double.tryParse(
-                        quantityController.text.trim().replaceAll(',', '.'),
-                      );
-                      if (price == null ||
-                          price <= 0 ||
-                          quantity == null ||
-                          quantity <= 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Bitte Kaufpreis und Stückzahl prüfen.',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      await state.addHolding(
-                        Holding(
-                          id: 'holding-${DateTime.now().microsecondsSinceEpoch}',
-                          instrumentId: instrument.id,
-                          purchaseDate: purchaseDate,
-                          purchasePriceEuro: price,
-                          quantity: quantity,
-                          note: noteController.text.trim(),
-                        ),
-                      );
-                      if (sheetContext.mounted) {
-                        Navigator.of(sheetContext).pop();
-                      }
-                    },
-                    child: const Text('Position speichern'),
-                  ),
+                  const Icon(Icons.chevron_right_rounded),
                 ],
               ),
             ),
-          );
-        },
-      );
-    },
-  );
-
-  searchTimer?.cancel();
-  searchController.dispose();
-  priceController.dispose();
-  quantityController.dispose();
-  noteController.dispose();
+            const SizedBox(height: 12),
+            TextField(
+              controller: noteController,
+              decoration: const InputDecoration(
+                labelText: 'Notiz (optional)',
+                hintText: 'Zum Beispiel Sparplan',
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: () async {
+                final instrument = selectedInstrument;
+                if (instrument == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Bitte zuerst ein Wertpapier auswählen.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+                final price = double.tryParse(
+                  priceController.text.trim().replaceAll(',', '.'),
+                );
+                final quantity = double.tryParse(
+                  quantityController.text.trim().replaceAll(',', '.'),
+                );
+                if (price == null ||
+                    price <= 0 ||
+                    quantity == null ||
+                    quantity <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Bitte Kaufpreis und Stückzahl prüfen.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+                await state.addHolding(
+                  Holding(
+                    id: 'holding-${DateTime.now().microsecondsSinceEpoch}',
+                    instrumentId: instrument.id,
+                    purchaseDate: purchaseDate,
+                    purchasePriceEuro: price,
+                    quantity: quantity,
+                    note: noteController.text.trim(),
+                  ),
+                );
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('Position speichern'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _HoldingInstrumentOption extends StatelessWidget {

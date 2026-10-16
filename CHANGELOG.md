@@ -1,5 +1,7 @@
 # Unveröffentlicht – EV-018 / EV-019
 
+- Depot: Eingabe-Controller und Such-Timer gehören jetzt zum Zustand des Positionsdialogs. Sie werden erst beim Entfernen des Dialogs freigegeben, damit Speichern und Schließen während der Animation keine Zugriffe auf bereits freigegebene Controller auslösen. Zwei Regressionstests reproduzieren und prüfen diese Abläufe einschließlich erneutem Öffnen.
+
 - Testbereich: Projektion und Zonen per Antippen auswählbar; aktive Linie und Einstiegs-/Ausstiegsbereiche hervorgehoben. Zugeordnete Kurswerte, Stop-Loss, Invalidierung und verwendete Daten mit Herleitung ergänzt. Alternativauswahl über beschriftete Schalter; Zoom und reguläre Analyse bleiben verfügbar.
 
 - Reguläre Analyse und Testbereich mit Reitern „Elliott-Wellen“ und „Price Action“; alte Informationsebenen ersetzt, Elliott-Erklärungen erhalten.
