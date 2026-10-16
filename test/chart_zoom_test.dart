@@ -19,6 +19,33 @@ void main() {
     ]))));
   }
 
+  testWidgets(
+      'Ablesegeste bleibt bei Richtungswechsel und vertikalem Zittern aktiv',
+      (tester) async {
+    await showChart(tester);
+    final rect = tester.getRect(find.byKey(const ValueKey('chart-gestures')));
+    final start = rect.topLeft + const Offset(100, 100);
+    final finger = await tester.startGesture(start);
+    await finger.moveTo(start + const Offset(50, 0));
+    await tester.pump();
+    String label() => tester
+        .widget<Text>(find.byKey(const ValueKey('chart-inspection')))
+        .data!;
+    expect(label(), contains('€ ·'));
+    await finger.moveTo(start + const Offset(60, 110));
+    await tester.pump();
+    final previous = label();
+    await finger.moveTo(start + const Offset(100, 115));
+    await tester.pump();
+    expect(label(), isNot(previous));
+    await finger.moveTo(start + const Offset(40, 120));
+    await tester.pump();
+    expect(label(), isNot(previous));
+    await finger.up();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.takeException(), isNull);
+  });
+
   for (final location in [
     const Offset(0.2, 0.15),
     const Offset(0.5, 0.5),

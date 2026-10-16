@@ -1,6 +1,7 @@
 import 'package:elliott_vision/elliott_vision.dart';
 import 'package:elliott_vision/src/experimental_chart.dart';
 import 'package:elliott_vision/src/test_screen.dart';
+import 'package:elliott_vision/src/price_action.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,7 +33,11 @@ void main() {
     await tester.tap(find.text('1 Tag').last);
     await tester.pumpAndSettle();
     expect(
-        find.textContaining('Apple Inc. · 1 Tag · Demodaten'), findsOneWidget);
+        tester
+            .widget<PriceActionPanel>(find.byType(PriceActionPanel))
+            .instrument
+            .timeframe,
+        ChartTimeframe.oneDay);
     await tester.tap(find.text('Elliott-Wellen'));
     await tester.pumpAndSettle();
     final chart = tester.widget<ExperimentalScenarioChart>(

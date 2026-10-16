@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 
 import 'app.dart';
 import 'models.dart';
+import 'candle_chart_painter.dart';
 
 const _chartSideInset = 14.0;
 
@@ -50,6 +51,7 @@ class ElliottScenarioChart extends StatefulWidget {
     required this.visibleScenarioIds,
     required this.historyPoints,
     this.showZones = true,
+    this.candleMode = false,
     super.key,
   });
 
@@ -58,6 +60,7 @@ class ElliottScenarioChart extends StatefulWidget {
   final Set<String> visibleScenarioIds;
   final int historyPoints;
   final bool showZones;
+  final bool candleMode;
 
   @override
   State<ElliottScenarioChart> createState() => _ElliottScenarioChartState();
@@ -70,18 +73,25 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
   bool _restored = false;
   double? _selectedIndex;
   bool _selectedProjection = false;
+  List<PricePoint> _points() => widget.candleMode
+      ? widget.instrument.candlesEuro
+          .map((c) => PricePoint(timestamp: c.timestamp, euro: c.close))
+          .toList()
+      : widget.instrument.pricePoints;
+  late List<PricePoint> _inspectionPoints = _points();
 
   void _inspect(Offset position, double width) {
     final fraction =
         _viewport.start + _focalFraction(position, width) * _viewport.span;
-    final points = widget.instrument.pricePoints;
+    final points = _inspectionPoints;
     final start = math.max(0, points.length - widget.historyPoints);
     setState(() {
-      _selectedProjection = fraction > 0.64;
+      final historyFraction = widget.candleMode ? 1.0 : 0.64;
+      _selectedProjection = fraction > historyFraction;
       _selectedIndex = _selectedProjection || start >= points.length
           ? null
           : start +
-              (fraction / 0.64 * (points.length - start - 1))
+              (fraction / historyFraction * (points.length - start - 1))
                   .clamp(0.0, (points.length - start - 1).toDouble());
     });
   }
@@ -89,7 +99,16 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
   String get _inspectionLabel {
     if (_selectedProjection) return 'Projektion – kein historischer Kurs';
     if (_selectedIndex == null) return 'Mit einem Finger einen Kurs auswählen';
-    final points = widget.instrument.pricePoints;
+    final points = _inspectionPoints;
+    if (widget.candleMode) {
+      final candle = widget.instrument.candlesEuro[_selectedIndex!
+          .round()
+          .clamp(0, widget.instrument.candlesEuro.length - 1)];
+      final date = candle.timestamp.toLocal();
+      String money(double v) => v.toStringAsFixed(2).replaceAll('.', ',');
+      return '${date.day}.${date.month}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} · €\n'
+          'O ${money(candle.open)} · H ${money(candle.high)} · T ${money(candle.low)} · S ${money(candle.close)}';
+    }
     final low = _selectedIndex!.floor();
     final high = math.min(low + 1, points.length - 1);
     final fraction = _selectedIndex! - low;
@@ -112,7 +131,7 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
   }
 
   String get _storageId => 'chart-viewport-${widget.instrument.id}-'
-      '${widget.instrument.selectedSymbol}-${widget.instrument.timeframe.name}';
+      '${widget.instrument.selectedSymbol}-${widget.instrument.timeframe.name}-${widget.candleMode}';
 
   @override
   void didChangeDependencies() {
@@ -130,14 +149,17 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
   @override
   void didUpdateWidget(covariant ElliottScenarioChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.instrument, widget.instrument)) {
+    if (!identical(oldWidget.instrument, widget.instrument) ||
+        oldWidget.candleMode != widget.candleMode) {
+      _inspectionPoints = _points();
       _selectedIndex = null;
       _selectedProjection = false;
     }
     if (oldWidget.instrument.id != widget.instrument.id ||
         oldWidget.instrument.selectedSymbol !=
             widget.instrument.selectedSymbol ||
-        oldWidget.instrument.timeframe != widget.instrument.timeframe) {
+        oldWidget.instrument.timeframe != widget.instrument.timeframe ||
+        oldWidget.candleMode != widget.candleMode) {
       _viewport = const ChartViewport();
       _selectedIndex = null;
       _selectedProjection = false;
@@ -239,15 +261,21 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
                   child: SizedBox.expand(
                       child: CustomPaint(
                     key: const ValueKey('scenario-chart-paint'),
-                    painter: _ChartPainter(
-                      instrument: widget.instrument,
-                      analysis: widget.analysis,
-                      visibleScenarioIds: visibleIds,
-                      historyPoints: widget.historyPoints,
-                      showZones: widget.showZones,
-                      viewport: _viewport,
-                      selectedIndex: _selectedIndex,
-                    ),
+                    painter: widget.candleMode
+                        ? CandleChartPainter(
+                            candles: widget.instrument.candlesEuro,
+                            start: _viewport.start,
+                            end: _viewport.end,
+                            selected: _selectedIndex)
+                        : _ChartPainter(
+                            instrument: widget.instrument,
+                            analysis: widget.analysis,
+                            visibleScenarioIds: visibleIds,
+                            historyPoints: widget.historyPoints,
+                            showZones: widget.showZones,
+                            viewport: _viewport,
+                            selectedIndex: _selectedIndex,
+                          ),
                   )),
                 ),
               ),
@@ -280,6 +308,7 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
 class _ChartScaleGestureRecognizer extends ScaleGestureRecognizer {
   final Map<int, Offset> _starts = {};
   bool _multiTouch = false;
+  bool _horizontalLocked = false;
 
   @override
   void addAllowedPointer(PointerDownEvent event) {
@@ -292,13 +321,20 @@ class _ChartScaleGestureRecognizer extends ScaleGestureRecognizer {
     if (event is PointerDownEvent && _starts.length >= 2) {
       _multiTouch = true;
     }
-    if (event is PointerMoveEvent && !_multiTouch && _starts.length == 1) {
+    if (event is PointerMoveEvent &&
+        !_multiTouch &&
+        !_horizontalLocked &&
+        _starts.length == 1) {
       final start = _starts[event.pointer];
       if (start != null) {
         final delta = event.position - start;
         if (delta.dy.abs() > kTouchSlop && delta.dy.abs() > delta.dx.abs()) {
           resolve(GestureDisposition.rejected);
           return;
+        }
+        if (delta.dx.abs() > kTouchSlop && delta.dx.abs() >= delta.dy.abs()) {
+          _horizontalLocked = true;
+          resolve(GestureDisposition.accepted);
         }
       }
     }
@@ -315,6 +351,7 @@ class _ChartScaleGestureRecognizer extends ScaleGestureRecognizer {
   void didStopTrackingLastPointer(int pointer) {
     _starts.clear();
     _multiTouch = false;
+    _horizontalLocked = false;
     super.didStopTrackingLastPointer(pointer);
   }
 }
@@ -783,8 +820,13 @@ class _ChartPainter extends CustomPainter {
   void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
     const dash = 5.0;
     const gap = 4.0;
+    final clip = canvas.getLocalClipBounds();
     var x = start.dx;
-    while (x < end.dx) {
+    if (x < clip.left) {
+      x += ((clip.left - x) / (dash + gap)).floor() * (dash + gap);
+    }
+    final visibleEnd = math.min(end.dx, clip.right);
+    while (x < visibleEnd) {
       canvas.drawLine(
         Offset(x, start.dy),
         Offset(math.min(x + dash, end.dx), end.dy),

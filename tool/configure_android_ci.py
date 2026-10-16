@@ -13,6 +13,17 @@ MANIFEST = ROOT / "android/app/src/main/AndroidManifest.xml"
 GRADLE = ROOT / "android/app/build.gradle.kts"
 KEY_PROPERTIES = ROOT / "android/key.properties"
 SIGNING_MARKER = "// ELLIOTT_VISION_SIGNING"
+DEBUG_SIGNING = """
+        // ELLIOTT_VISION_FIXED_DEBUG_SIGNING
+        getByName("debug") {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
+"""
 
 
 def configure_manifest() -> None:
@@ -72,6 +83,11 @@ def write_key_properties() -> bool:
 def configure_gradle() -> None:
     text = GRADLE.read_text(encoding="utf-8")
     if SIGNING_MARKER in text:
+        if "// ELLIOTT_VISION_FIXED_DEBUG_SIGNING" not in text:
+            if "signingConfigs {" not in text:
+                raise RuntimeError("Vorhandener signingConfigs-Block fehlt")
+            text = text.replace("signingConfigs {", "signingConfigs {" + DEBUG_SIGNING, 1)
+            GRADLE.write_text(text, encoding="utf-8")
         return
     imports = "import java.io.FileInputStream\nimport java.util.Properties\n\n"
     if "import java.util.Properties" not in text:
@@ -99,7 +115,7 @@ if (keystorePropertiesFile.exists()) {{
         }
     }
 
-"""
+""".replace("signingConfigs {", "signingConfigs {" + DEBUG_SIGNING, 1)
     if 'create("release")' not in text:
         text, count = re.subn(
             r"(?m)^(\s*)buildTypes\s*\{",

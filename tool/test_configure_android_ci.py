@@ -10,6 +10,23 @@ import configure_android_ci
 
 
 class ConfigureAndroidCiTest(unittest.TestCase):
+    def test_fixed_debug_signing_is_idempotent_and_upgrades_existing_config(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            gradle = Path(directory) / "build.gradle.kts"
+            gradle.write_text('android {\n    buildTypes {\n        release {\n'
+                              '            signingConfig = signingConfigs.getByName("debug")\n'
+                              '        }\n    }\n}\n', encoding="utf-8")
+            with patch.object(configure_android_ci, "GRADLE", gradle):
+                configure_android_ci.configure_gradle()
+                first = gradle.read_text(encoding="utf-8")
+                self.assertIn(configure_android_ci.DEBUG_SIGNING, first)
+                configure_android_ci.configure_gradle()
+                self.assertEqual(first, gradle.read_text(encoding="utf-8"))
+                # Simulate a checkout configured before fixed test signing existed.
+                gradle.write_text(first.replace(configure_android_ci.DEBUG_SIGNING, ""), encoding="utf-8")
+                configure_android_ci.configure_gradle()
+                self.assertEqual(first, gradle.read_text(encoding="utf-8"))
+
     def test_windows_keystore_path_uses_forward_slashes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             key_properties = Path(directory) / "key.properties"

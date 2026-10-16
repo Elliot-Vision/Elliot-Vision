@@ -1,6 +1,10 @@
 # Unveröffentlicht – EV-018 / EV-019
 
-- Testbereich mit Reitern „Elliott-Wellen“ und „Price Action“; Price Action als vorbereiteter Bereich ohne vorgetäuschte Analyse. Auswahl und Filter bleiben beim Wechsel erhalten.
+- Reguläre Analyse und Testbereich mit Reitern „Elliott-Wellen“ und „Price Action“; alte Informationsebenen ersetzt, Elliott-Erklärungen erhalten.
+- Price Action mit OHLC-Kerzenchart, Fingerabfrage der vier Kerzenwerte, regelbasierter Beschreibung und Erklärungen zu Körpern, Dochten und Intervallen. Anbieter-OHLC werden umgerechnet und gespeichert; fehlende Kerzen bleiben sichtbar fehlend.
+- Horizontale Kursabfrage gegen vertikales Zittern und Richtungswechsel abgesichert; Punkteliste zwischengespeichert und Zeichnung unsichtbarer Projektionsstriche reduziert.
+- Codemagic-Workflow für fest signierte Test-APKs und steigende Buildnummer vorbereitet; Kontoeinrichtung weiterhin erforderlich.
+- Unabhängigen CSV-Referenzvergleich ergänzt; Lizenz-, Referenzdaten- und Veröffentlichungsaufgaben bleiben dokumentiert offen.
 - Gemeinsamer interaktiver Chart für reguläre Analyse, gespeicherte Analysen und Test-Tab; doppelte Painter-Implementierung entfernt.
 - Test-Tab zeigt maximal zwei Projektionen: Hauptszenario und stärkste Alternative. Reguläre Analyse behält ihre drei Szenariofilter.
 - Linke Euro-Achsenbeschriftung im Test-Chart entfernt; Kursverlauf erhält 44 Pixel mehr Breite. Preisabfrage und Zoom verwenden dieselben neuen Plot-Grenzen.
@@ -8,9 +12,9 @@
 - Eigene synthetische Demoreihen mit tatsächlicher Zeitspanne pro Auswahl; Max zeigt zehn Jahre.
 - Einfinger-Ablesen zwischen Datenpunkten interpoliert, mit entsprechender Kennzeichnung.
 - Test-Tab mit Demo-Wertpapierauswahl, sieben Zeiträumen, einzelnen Szenarioschaltern und Zonenschalter erweitert.
-- Offene Geräteprobleme: Einfinger-Kursabfrage noch nicht abgenommen; letzte Korrektur dafür zurückgenommen.
+- Neue Kursabfrage-Korrektur und Price Action benötigen noch die Android-Abnahme.
 - Isolierter Test-Tab mit Demodaten.
-- Stufenloser Chart-Zoom, Verschieben und Reset nur im Testbereich.
+- Stufenloser Chart-Zoom, Verschieben und Reset in den gemeinsamen Charts.
 - Repository-Abgleich und sechs neue Regressionstests.
 - Kurs und Datum/Uhrzeit beim horizontalen Ablesen mit einem Finger, inklusive Fadenkreuz; Projektionen separat gekennzeichnet.
 - Zwei Finger übernehmen Zoom und Verschieben auf der gesamten Chartfläche; fünf zusätzliche Gesten- und Ablesetests.

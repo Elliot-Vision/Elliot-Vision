@@ -5,6 +5,7 @@ import 'demo_data.dart';
 import 'experimental_chart.dart';
 import 'experimental_demo_series.dart';
 import 'models.dart';
+import 'price_action.dart';
 
 /// Eigene Demodaten, keine Verbindung zum produktiven AppState oder Speicher.
 class TestScreen extends StatefulWidget {
@@ -108,32 +109,10 @@ class _TestScreenState extends State<TestScreen> {
           ),
           const SizedBox(height: 12),
           if (_priceAction)
-            Card(
-              key: const ValueKey('test-price-action-preview'),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Price Action',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 8),
-                    const Text('In Vorbereitung'),
-                    const SizedBox(height: 12),
-                    Text(
-                        '${_instrument.name} · ${_instrument.timeframe.label} · Demodaten'),
-                    const SizedBox(height: 12),
-                    const Text(
-                        'Hier werden später Kerzenchart und Price-Action-Funktionen getestet. '
-                        'Dazu kommen Erklärungen zu Eröffnung, Hoch, Tief und Schluss, '
-                        'Kerzenkörpern, Dochten und noch laufenden Kerzen.'),
-                    const SizedBox(height: 8),
-                    const Text(
-                        'Kerzenchart und Price-Action-Berechnung sind noch nicht implementiert.'),
-                  ],
-                ),
-              ),
-            )
+            PriceActionPanel(
+                key: const ValueKey('test-price-action-preview'),
+                instrument: _instrument,
+                analysis: _analysis)
           else ...[
             ExperimentalScenarioChart(
               instrument: _instrument,

@@ -4,6 +4,38 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:elliott_vision/elliott_vision.dart';
 
 void main() {
+  testWidgets('Analyse wechselt zwischen Elliott-Wellen und Price Action',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState(
+        marketData: DemoMarketDataRepository(),
+        analysisGateway: RuleBasedAnalysisGateway(),
+        store: SharedPreferencesLocalStore());
+    await state.initialize();
+    await _pumpAppleAnalysis(tester, state);
+    await _revealLazyListChild(tester,
+        target: find.byKey(const ValueKey('analysis-mode-tabs')),
+        scrollable: _scrollableInside('analysis-content-list'),
+        dragOffset: const Offset(0, -200));
+    await tester.tap(find.text('Price Action'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('fehlen vollständige OHLC'), findsOneWidget);
+    expect(find.byType(ElliottScenarioChart), findsNothing);
+    await tester.tap(find.text('Elliott-Wellen'));
+    await tester.pumpAndSettle();
+    await _revealLazyListChild(tester,
+        target: find.byType(ElliottScenarioChart),
+        scrollable: _scrollableInside('analysis-content-list'),
+        dragOffset: const Offset(0, -200));
+    expect(
+        tester
+            .widget<ElliottScenarioChart>(find.byType(ElliottScenarioChart))
+            .visibleScenarioIds
+            .length,
+        3);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
       'Reguläre Analyse verwendet interaktiven Chart mit eigenen Kursdaten',
       (tester) async {
@@ -23,6 +55,9 @@ void main() {
     expect(chart.instrument.historyEuro,
         state.instrumentById('aapl')!.historyEuro);
     expect(chart.visibleScenarioIds.length, 3);
+    expect(find.text('Kompakt'), findsNothing);
+    expect(find.text('Standard'), findsNothing);
+    expect(find.text('Experte'), findsNothing);
     final rect = tester.getRect(find.byKey(const ValueKey('chart-gestures')));
     final center = rect.topLeft + Offset(rect.width * 0.32, 150);
     final first =

@@ -36,10 +36,22 @@ Instrument experimentalDemoSeries(Instrument source, ChartTimeframe timeframe) {
     return math.max(0.01, baseline + source.euroPrice * oscillation(day));
   }).toList();
   values[values.length - 1] = source.euroPrice;
+  final candles = List.generate(values.length, (index) {
+    final open = index == 0 ? values.first * 0.998 : values[index - 1];
+    final close = values[index];
+    final wick = source.euroPrice * (0.001 + (index % 5) * 0.0002);
+    return PriceCandle(
+        timestamp: timestamps[index],
+        open: open,
+        high: math.max(open, close) + wick,
+        low: math.max(0.001, math.min(open, close) - wick),
+        close: close);
+  });
   return source.copyWith(
       timeframe: timeframe,
       historyEuro: values,
       historyTimestamps: timestamps,
+      candlesEuro: candles,
       dataSource: 'Synthetische Demodaten',
       isLive: false);
 }

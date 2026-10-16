@@ -29,9 +29,9 @@ class LiveMarketDataRepository implements MarketDataRepository {
     Future<void> Function(Duration)? delay,
     DateTime Function()? now,
     this.fxCacheTtl = const Duration(minutes: 5),
-  }) : _client = client ?? http.Client(),
-       _delay = delay ?? ((duration) => Future<void>.delayed(duration)),
-       _now = now ?? (() => DateTime.now().toUtc()) {
+  })  : _client = client ?? http.Client(),
+        _delay = delay ?? ((duration) => Future<void>.delayed(duration)),
+        _now = now ?? (() => DateTime.now().toUtc()) {
     if (seed != null) {
       restore(seed);
     }
@@ -243,7 +243,8 @@ class LiveMarketDataRepository implements MarketDataRepository {
         'Fuer diesen Handelsplatz liegt kein bestaetigtes Kurssymbol vor.',
       );
     }
-    if (venue == instrument.defaultVenue && symbol == instrument.selectedSymbol) {
+    if (venue == instrument.defaultVenue &&
+        symbol == instrument.selectedSymbol) {
       return instrument;
     }
     final candidate = _QuoteCandidate(
@@ -452,9 +453,8 @@ class LiveMarketDataRepository implements MarketDataRepository {
       final retryAfter = double.tryParse(
         response.headers['retry-after'] ?? '',
       );
-      final requestedSeconds = reset?.ceil() ??
-          retryAfter?.ceil() ??
-          math.pow(2, attempt).toInt();
+      final requestedSeconds =
+          reset?.ceil() ?? retryAfter?.ceil() ?? math.pow(2, attempt).toInt();
       final seconds = requestedSeconds.clamp(1, 60).toInt();
       await _delay(Duration(seconds: seconds));
     }
@@ -503,8 +503,8 @@ class LiveMarketDataRepository implements MarketDataRepository {
     if (rawCloses.isEmpty) {
       throw MarketDataException('Keine Kurswerte fuer ${candidate.symbol}.');
     }
-    final marketPrice = (meta['regularMarketPrice'] as num?)?.toDouble() ??
-        rawCloses.last;
+    final marketPrice =
+        (meta['regularMarketPrice'] as num?)?.toDouble() ?? rawCloses.last;
     if (!marketPrice.isFinite || marketPrice <= 0) {
       throw MarketDataException('Ungültiger Kurs fuer ${candidate.symbol}.');
     }
@@ -562,12 +562,61 @@ class LiveMarketDataRepository implements MarketDataRepository {
       dataTimestamp: timestamp,
       historyEuro: history,
       historyTimestamps: historyTimestamps,
+      candlesEuro: _extractCandles(result, conversion: conversion),
       assetType: candidate.assetType,
       timeframe: timeframe,
       dataSource: 'Yahoo Finance / OpenFIGI',
       dataDelay: _dataDelayText(meta, candidate.assetType),
       isLive: true,
     );
+  }
+
+  List<PriceCandle> _extractCandles(Map<String, Object?> result,
+      {required double conversion}) {
+    final times = result['timestamp'];
+    final indicators = _asMap(result['indicators']);
+    final quotes = indicators['quote'];
+    if (times is! List || quotes is! List || quotes.isEmpty) return [];
+    final quote = _asMap(quotes.first);
+    final columns =
+        ['open', 'high', 'low', 'close'].map((key) => quote[key]).toList();
+    if (columns.any((column) => column is! List)) return [];
+    final adjusted = indicators['adjclose'];
+    final adjustedValues = adjusted is List && adjusted.isNotEmpty
+        ? _asMap(adjusted.first)['adjclose']
+        : null;
+    final candles = <PriceCandle>[];
+    for (var i = 0; i < times.length; i++) {
+      if (times[i] is! num ||
+          columns.any(
+              (column) => i >= (column as List).length || column[i] is! num)) {
+        continue;
+      }
+      final raw = columns
+          .map((column) => ((column as List)[i] as num).toDouble())
+          .toList();
+      var factor = conversion;
+      if (adjustedValues is List &&
+          i < adjustedValues.length &&
+          adjustedValues[i] is num &&
+          raw[3] > 0) {
+        factor *= (adjustedValues[i] as num).toDouble() / raw[3];
+      }
+      final candle = PriceCandle(
+          timestamp: DateTime.fromMillisecondsSinceEpoch(
+              (times[i] as num).toInt() * 1000,
+              isUtc: true),
+          open: raw[0] * factor,
+          high: raw[1] * factor,
+          low: raw[2] * factor,
+          close: raw[3] * factor);
+      if (candle.isValid &&
+          (candles.isEmpty ||
+              candle.timestamp.isAfter(candles.last.timestamp))) {
+        candles.add(candle);
+      }
+    }
+    return candles;
   }
 
   Future<Instrument> _loadInstrumentWithAllTimeExtremes(
@@ -932,7 +981,6 @@ class LiveMarketDataRepository implements MarketDataRepository {
     }
     return ticker;
   }
-
 }
 
 class _QuoteCandidate {
@@ -952,14 +1000,15 @@ class _QuoteCandidate {
   final String? isin;
   final String? idOverride;
 
-  _QuoteCandidate copyWith({String? isin, String? idOverride}) => _QuoteCandidate(
-    symbol: symbol,
-    name: name,
-    venue: venue,
-    assetType: assetType,
-    isin: isin ?? this.isin,
-    idOverride: idOverride ?? this.idOverride,
-  );
+  _QuoteCandidate copyWith({String? isin, String? idOverride}) =>
+      _QuoteCandidate(
+        symbol: symbol,
+        name: name,
+        venue: venue,
+        assetType: assetType,
+        isin: isin ?? this.isin,
+        idOverride: idOverride ?? this.idOverride,
+      );
 }
 
 class _Extremes {

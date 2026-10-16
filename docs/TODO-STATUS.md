@@ -1,38 +1,33 @@
 # Elliott Vision – Umsetzungsstatus der zentralen To-do-Liste
 
-Stand: Version 0.4.1+7
+Stand: Entwicklungsbranch vom 16. Oktober 2026 (Basis 0.4.1+7)
 
-## Offen: Analyse-Reiter für Elliott-Wellen und Price Action
+## Umgesetzt: Analyse-Reiter für Elliott-Wellen und Price Action
 
-Aufgenommen am 16. Oktober 2026; teilweise vorbereitet.
+In regulärer Analyse und Testbereich umgesetzt; Geräteabnahme steht aus.
 
-- Im Testbereich umgesetzt: Umschaltbare Reiter „Elliott-Wellen“ und
-  „Price Action“. Elliott-Wellen zeigt den bestehenden Chart; Price Action
-  ist als Vorbereitungsbereich gekennzeichnet. Demo-Auswahl, Zeitraum und
-  Filtereinstellungen bleiben beim Wechsel erhalten.
-- Noch offen: Umstellung der regulären Analyse-Reiter sowie Kerzenchart,
-  Price-Action-Berechnung und vollständige Kerzenerklärungen.
-
-- Die bisherigen Reiter „Kompakt“, „Standard“ und „Experte“ entfernen und
-  durch „Elliott-Wellen“ und „Price Action“ ersetzen.
-- Mit den beiden Reitern später zwischen der Elliott-Wellen-Berechnung und
-  einer eigenen Price-Action-Ansicht wechseln können.
-- In der Price-Action-Ansicht verständlich erklären, wie einzelne Kerzen
-  aus den Kursen des ausgewählten Zeitintervalls entstehen: Eröffnung,
-  Hoch, Tief und Schluss (OHLC), Kerzenkörper, Dochte sowie steigende und
-  fallende Kerzen. Den Zusammenhang zwischen Zeitraum, Kerzenintervall und
-  einer noch nicht abgeschlossenen Kerze erläutern.
-- Bestehende Erklärungen aus den drei Informationsebenen bei der späteren
-  Umstellung sinnvoll in die beiden Analyseansichten einordnen.
+- „Kompakt“, „Standard“ und „Experte“ in der regulären Analyse ersetzt.
+- Beide Bereiche zeigen einen eigenen Inhalt: Elliott-Szenarien oder OHLC-Kerzen.
+- Kerzen aus vollständigen Anbieterwerten, einschließlich Euro-Umrechnung und
+  Anpassung an bereinigte Schlusskurse; alte Snapshots bleiben lesbar.
+- Synthetische Kerzen ausschließlich für die gekennzeichneten Testdaten.
+- Price Action beschreibt die letzte Kerze (Körper, Doji-ähnlich, langer Docht),
+  die Spanne und Schlusskursänderung der letzten bis zu 20 Kerzen.
+- Erklärungen zu OHLC, Körper, Dochten, Intervallen und laufenden Kerzen.
+- Vorhandene Elliott-Erklärungen und Regelprüfungen bleiben zugänglich.
+- Keine erfundenen Kerzen bei fehlenden OHLC-Daten; Neuladen wird angeboten.
 
 ## Entwicklungsbranch EV-018 / EV-019
 
 - Separater Test-Tab mit eigenen, sichtbar gekennzeichneten Demodaten.
 - Demo-Wertpapierauswahl, sieben Zeiträume, Szenarien einzeln schaltbar und Zonen ein-/ausblendbar.
-- Stufenloser horizontaler Zoom ausschließlich im experimentellen Chart.
+- Stufenloser horizontaler Zoom im gemeinsamen Chart.
 - Zoom und Scrollen auf dem zurückgenommenen Stand auf Android bestätigt; Verschieben und Reset zuvor ebenfalls bestätigt.
 - Nutzer bestätigt fünf Demo-Aktien, Einfinger-Kursabfrage und funktionierenden Zoom.
 - Zeitraum-Demoreihen und kontinuierlich interpoliertes Ablesen nachgebessert; neue Geräteprüfung ausstehend.
+- Horizontale Ablesegesten bleiben nach Beginn auch bei vertikalem Zittern
+  aktiv; Punkteliste wird zwischengespeichert und unsichtbare Projektionsstriche
+  werden beim Zeichnen übersprungen. Regressionstest für Richtungswechsel ergänzt.
 - Rahmenlose Darstellung ohne Kartenhintergrund im Test-Tab ergänzt.
 - Gemeinsamer Chart in regulärer Analyse und Historie übernommen: Zoom, Verschieben, interpolierte Kursabfrage, freie Darstellung ohne linke Euro-Achse.
 - Testbereich auf Hauptszenario und stärkste Alternative begrenzt; reguläre Analyse behält alle drei Szenarien.
@@ -51,7 +46,7 @@ Aufgenommen am 16. Oktober 2026; teilweise vorbereitet.
 - Einstiegs-, Ausstiegs-, Ziel-, Stop- und Invalidierungszonen
 - Analysehistorie mit vollständigem Instrument- und Kurs-Snapshot
 - Regelwerk-, Erklärungsmodell- und Promptversions-Nachweis
-- X-Achse mit Datum/Uhrzeit und Y-Achse mit Euro-Kurs
+- Zeitachse und Euro-Kursabfrage mit dem Finger; keine linke Preisachse
 - 1 Tag, 5 Tage, 1 Monat, 3 Monate, 1 Jahr, 5 Jahre und Max
 - automatisch passende 5-Minuten-, 30-Minuten-, Tages-, Wochen- und Monatsdaten
 - aktueller Kurs, Kurszeitpunkt, ATH, ATL und aktuelle Abstände
@@ -77,7 +72,17 @@ Aufgenommen am 16. Oktober 2026; teilweise vorbereitet.
 - dokumentierte Quellen, Endpunkte, Intervalle, FX-, Split- und Fallback-Logik
 - durchsuchbare Wissensdatenbank mit mindestens 35 Begriffen
 - durchgängiger Dark Mode, minimalistisches Finanz-App-Design und Farbscore
-- drei Informationsebenen: Kompakt, Standard und Experte
+- getrennte Analyseansichten für Elliott-Wellen und Price Action
+
+## Technisch vorbereitet; Einrichtung / Abnahme noch offen
+
+- Workflow `android-test-signed` für Test-APKs mit fester Signatur und steigender
+  Buildnummer. Der passende Keystore muss in Codemagic hinterlegt werden.
+- CSV-Vergleichswerkzeug für unabhängige Referenzdaten, einschließlich Tests.
+  Ein tatsächlich unabhängiger Datensatz muss noch bereitgestellt werden.
+- Anleitung und konkrete Freigabeschritte: [Test-Signierung und Freigabe](TEST-SIGNIERUNG-UND-FREIGABE.md).
+- Android-Prüfung: längeres Ablesen mit Richtungswechsel, Zoom/Pan/Scrollen,
+  Zeitraum- und Reiterwechsel, OHLC-Anzeige und Installation eines Folgeupdates.
 
 ## Extern vor einer öffentlichen Produktionsversion erforderlich
 

@@ -6,7 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
-  test('ISIN wird exakt gemappt, in Euro umgerechnet und nach Hoch/Tief bewertet',
+  test(
+      'ISIN wird exakt gemappt, in Euro umgerechnet und nach Hoch/Tief bewertet',
       () async {
     final client = MockClient((request) async {
       if (request.url.path == '/v3/mapping') {
@@ -190,6 +191,11 @@ void main() {
       ChartTimeframe.oneMonth,
     );
     expect(initial.fxRate, closeTo(0.90, 0.001));
+    expect(initial.candlesEuro, hasLength(3));
+    expect(initial.candlesEuro.first.open, closeTo(72, 0.001));
+    expect(initial.candlesEuro.first.high, closeTo(76.5, 0.001));
+    expect(initial.candlesEuro.first.low, closeTo(63, 0.001));
+    expect(initial.candlesEuro.first.close, closeTo(72, 0.001));
     expect(cached.fxRate, closeTo(0.90, 0.001));
     expect(fxAttempts, 1);
 
@@ -215,38 +221,38 @@ void main() {
 }
 
 List<Object?> _mappingResponse() => <Object?>[
-  <String, Object?>{
-    'data': <Object?>[
       <String, Object?>{
-        'ticker': 'AAPL',
-        'name': 'Apple Inc.',
-        'exchCode': 'US',
-        'marketSector': 'Equity',
+        'data': <Object?>[
+          <String, Object?>{
+            'ticker': 'AAPL',
+            'name': 'Apple Inc.',
+            'exchCode': 'US',
+            'marketSector': 'Equity',
+          },
+        ],
       },
-    ],
-  },
-];
+    ];
 
 Map<String, Object?> _appleChartResponse() => _chartResponse(
-  currency: 'USD',
-  venue: 'Nasdaq',
-  marketPrice: 100,
-  closes: const <double>[80, 90, 100],
-  highs: const <double>[85, 95, 110],
-  lows: const <double>[70, 75, 90],
-);
+      currency: 'USD',
+      venue: 'Nasdaq',
+      marketPrice: 100,
+      closes: const <double>[80, 90, 100],
+      highs: const <double>[85, 95, 110],
+      lows: const <double>[70, 75, 90],
+    );
 
 Map<String, Object?> _fxResponse(double rate) => <String, Object?>{
-  'chart': <String, Object?>{
-    'result': <Object?>[
-      <String, Object?>{
-        'meta': <String, Object?>{'regularMarketPrice': rate},
-        'indicators': <String, Object?>{},
+      'chart': <String, Object?>{
+        'result': <Object?>[
+          <String, Object?>{
+            'meta': <String, Object?>{'regularMarketPrice': rate},
+            'indicators': <String, Object?>{},
+          },
+        ],
+        'error': null,
       },
-    ],
-    'error': null,
-  },
-};
+    };
 
 Map<String, Object?> _chartResponse({
   required String currency,
@@ -255,33 +261,35 @@ Map<String, Object?> _chartResponse({
   required List<double> closes,
   required List<double> highs,
   required List<double> lows,
-}) => <String, Object?>{
-  'chart': <String, Object?>{
-    'result': <Object?>[
-      <String, Object?>{
-        'meta': <String, Object?>{
-          'currency': currency,
-          'regularMarketPrice': marketPrice,
-          'regularMarketTime': 1785756000,
-          'fullExchangeName': venue,
-          'longName': 'Apple Inc.',
-          'exchangeDataDelayedBy': 900,
-        },
-        'timestamp': <int>[1783164000, 1785752400, 1785756000],
-        'indicators': <String, Object?>{
-          'adjclose': <Object?>[
-            <String, Object?>{'adjclose': closes},
-          ],
-          'quote': <Object?>[
-            <String, Object?>{
-              'close': closes,
-              'high': highs,
-              'low': lows,
+}) =>
+    <String, Object?>{
+      'chart': <String, Object?>{
+        'result': <Object?>[
+          <String, Object?>{
+            'meta': <String, Object?>{
+              'currency': currency,
+              'regularMarketPrice': marketPrice,
+              'regularMarketTime': 1785756000,
+              'fullExchangeName': venue,
+              'longName': 'Apple Inc.',
+              'exchangeDataDelayedBy': 900,
             },
-          ],
-        },
+            'timestamp': <int>[1783164000, 1785752400, 1785756000],
+            'indicators': <String, Object?>{
+              'adjclose': <Object?>[
+                <String, Object?>{'adjclose': closes},
+              ],
+              'quote': <Object?>[
+                <String, Object?>{
+                  'open': closes,
+                  'close': closes,
+                  'high': highs,
+                  'low': lows,
+                },
+              ],
+            },
+          },
+        ],
+        'error': null,
       },
-    ],
-    'error': null,
-  },
-};
+    };

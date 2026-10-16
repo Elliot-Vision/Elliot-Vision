@@ -9,6 +9,7 @@ import 'formatters.dart';
 import 'knowledge_data.dart';
 import 'models.dart';
 import 'test_screen.dart';
+import 'price_action.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -150,113 +151,113 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
           children: [
-          const _BrandHeader(),
-          const SizedBox(height: 28),
-          Text(
-            'Szenarien statt\nScheinsicherheit.',
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              color: AppPalette.ink,
-              fontWeight: FontWeight.w800,
-              height: 1.02,
-              letterSpacing: -1.2,
+            const _BrandHeader(),
+            const SizedBox(height: 28),
+            Text(
+              'Szenarien statt\nScheinsicherheit.',
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    color: AppPalette.ink,
+                    fontWeight: FontWeight.w800,
+                    height: 1.02,
+                    letterSpacing: -1.2,
+                  ),
             ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Finde ein Wertpapier und vergleiche mehrere plausible '
-            'Elliott-Wellen-Zählungen transparent.',
-            style: TextStyle(
-              color: AppPalette.muted,
-              fontSize: 16,
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: 24),
-          TextField(
-            key: const ValueKey('discover-search-field'),
-            controller: _searchController,
-            onChanged: _onQueryChanged,
-            onSubmitted: _submitSearch,
-            textInputAction: TextInputAction.search,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search_rounded),
-              hintText: 'ISIN, Name oder Ticker',
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: 'Suche leeren',
-                      onPressed: () {
-                        _searchController.clear();
-                        _onQueryChanged('');
-                      },
-                      icon: const Icon(Icons.close_rounded),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          const _LiveDataNotice(),
-          const SizedBox(height: 12),
-          _AssetFilterBar(
-            selected: _assetFilter,
-            onChanged: (value) => setState(() => _assetFilter = value),
-          ),
-          const SizedBox(height: 28),
-          _SectionTitle(
-            title: _query.isEmpty ? 'Wertpapier suchen' : 'Suchergebnisse',
-            trailing: state.isSearching ? 'Lädt …' : '${results.length}',
-          ),
-          const SizedBox(height: 12),
-          if (state.isSearching)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 28),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (state.searchError != null)
-            _EmptyState(
-              icon: Icons.cloud_off_rounded,
-              title: 'Online-Suche nicht erreichbar',
-              text: state.searchError!,
-              actionLabel: 'Erneut versuchen',
-              onAction: () => state.search(_query),
-            )
-          else if (_query.isEmpty)
-            const _EmptyState(
-              icon: Icons.travel_explore_rounded,
-              title: 'Name, Ticker oder ISIN eingeben',
-              text:
-                  'Die App lädt passende Wertpapiere und deren aktuellen Kurs online.',
-            )
-          else if (results.isEmpty)
-            const _EmptyState(
-              icon: Icons.manage_search_rounded,
-              title: 'Kein Wertpapier gefunden',
-              text:
-                  'Prüfe die ISIN oder suche nach Name beziehungsweise Ticker.',
-            )
-          else
-            ...results.map(
-              (instrument) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: InstrumentCard(instrument: instrument),
+            const SizedBox(height: 12),
+            const Text(
+              'Finde ein Wertpapier und vergleiche mehrere plausible '
+              'Elliott-Wellen-Zählungen transparent.',
+              style: TextStyle(
+                color: AppPalette.muted,
+                fontSize: 16,
+                height: 1.45,
               ),
             ),
-          if (state.history.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            const _SectionTitle(title: 'Zuletzt analysiert'),
+            const SizedBox(height: 24),
+            TextField(
+              key: const ValueKey('discover-search-field'),
+              controller: _searchController,
+              onChanged: _onQueryChanged,
+              onSubmitted: _submitSearch,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search_rounded),
+                hintText: 'ISIN, Name oder Ticker',
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Suche leeren',
+                        onPressed: () {
+                          _searchController.clear();
+                          _onQueryChanged('');
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const _LiveDataNotice(),
             const SizedBox(height: 12),
-            ...state.history.take(2).map((snapshot) {
-              final instrument =
-                  snapshot.instrumentSnapshot ??
-                  state.instrumentById(snapshot.instrumentId);
-              if (instrument == null) {
-                return const SizedBox.shrink();
-              }
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _HistoryTile(snapshot: snapshot, instrument: instrument),
-              );
-            }),
-          ],
+            _AssetFilterBar(
+              selected: _assetFilter,
+              onChanged: (value) => setState(() => _assetFilter = value),
+            ),
+            const SizedBox(height: 28),
+            _SectionTitle(
+              title: _query.isEmpty ? 'Wertpapier suchen' : 'Suchergebnisse',
+              trailing: state.isSearching ? 'Lädt …' : '${results.length}',
+            ),
+            const SizedBox(height: 12),
+            if (state.isSearching)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 28),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (state.searchError != null)
+              _EmptyState(
+                icon: Icons.cloud_off_rounded,
+                title: 'Online-Suche nicht erreichbar',
+                text: state.searchError!,
+                actionLabel: 'Erneut versuchen',
+                onAction: () => state.search(_query),
+              )
+            else if (_query.isEmpty)
+              const _EmptyState(
+                icon: Icons.travel_explore_rounded,
+                title: 'Name, Ticker oder ISIN eingeben',
+                text:
+                    'Die App lädt passende Wertpapiere und deren aktuellen Kurs online.',
+              )
+            else if (results.isEmpty)
+              const _EmptyState(
+                icon: Icons.manage_search_rounded,
+                title: 'Kein Wertpapier gefunden',
+                text:
+                    'Prüfe die ISIN oder suche nach Name beziehungsweise Ticker.',
+              )
+            else
+              ...results.map(
+                (instrument) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: InstrumentCard(instrument: instrument),
+                ),
+              ),
+            if (state.history.isNotEmpty) ...[
+              const SizedBox(height: 22),
+              const _SectionTitle(title: 'Zuletzt analysiert'),
+              const SizedBox(height: 12),
+              ...state.history.take(2).map((snapshot) {
+                final instrument = snapshot.instrumentSnapshot ??
+                    state.instrumentById(snapshot.instrumentId);
+                if (instrument == null) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child:
+                      _HistoryTile(snapshot: snapshot, instrument: instrument),
+                );
+              }),
+            ],
           ],
         ),
       ),
@@ -279,26 +280,26 @@ class FavoritesScreen extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
           children: [
-          const _ScreenHeader(
-            eyebrow: 'WATCHLIST',
-            title: 'Favoriten',
-            subtitle: 'Deine gespeicherten Wertpapiere auf einen Blick.',
-          ),
-          const SizedBox(height: 24),
-          if (favorites.isEmpty)
-            const _EmptyState(
-              icon: Icons.star_border_rounded,
-              title: 'Noch keine Favoriten',
-              text:
-                  'Tippe in einer Analyse auf den Stern, um ein Wertpapier zu speichern.',
-            )
-          else
-            ...favorites.map(
-              (instrument) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: InstrumentCard(instrument: instrument),
-              ),
+            const _ScreenHeader(
+              eyebrow: 'WATCHLIST',
+              title: 'Favoriten',
+              subtitle: 'Deine gespeicherten Wertpapiere auf einen Blick.',
             ),
+            const SizedBox(height: 24),
+            if (favorites.isEmpty)
+              const _EmptyState(
+                icon: Icons.star_border_rounded,
+                title: 'Noch keine Favoriten',
+                text:
+                    'Tippe in einer Analyse auf den Stern, um ein Wertpapier zu speichern.',
+              )
+            else
+              ...favorites.map(
+                (instrument) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: InstrumentCard(instrument: instrument),
+                ),
+              ),
           ],
         ),
       ),
@@ -355,78 +356,78 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
           children: [
-          _ScreenHeader(
-            eyebrow: 'MEIN DEPOT',
-            title: 'Positionen',
-            subtitle:
-                'Aktuelle Kurse online laden; deine Kaufdaten bleiben lokal.',
-            action: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  tooltip: 'Kurse aktualisieren',
-                  onPressed: state.isRefreshingPortfolio
-                      ? null
-                      : state.refreshPortfolio,
-                  icon: state.isRefreshingPortfolio
-                      ? const SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.refresh_rounded),
-                ),
-                const SizedBox(width: 4),
-                IconButton.filled(
-                  tooltip: 'Position hinzufügen',
-                  onPressed: () => _showAddHoldingSheet(context, state),
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppPalette.lime,
-                    foregroundColor: AppPalette.onAccent,
+            _ScreenHeader(
+              eyebrow: 'MEIN DEPOT',
+              title: 'Positionen',
+              subtitle:
+                  'Aktuelle Kurse online laden; deine Kaufdaten bleiben lokal.',
+              action: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Kurse aktualisieren',
+                    onPressed: state.isRefreshingPortfolio
+                        ? null
+                        : state.refreshPortfolio,
+                    icon: state.isRefreshingPortfolio
+                        ? const SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh_rounded),
                   ),
-                  icon: const Icon(Icons.add_rounded),
-                ),
-              ],
-            ),
-          ),
-          if (state.portfolioError != null) ...[
-            const SizedBox(height: 14),
-            _StatusNotice(
-              icon: Icons.sync_problem_rounded,
-              text: state.portfolioError!,
-            ),
-          ],
-          const SizedBox(height: 24),
-          _PortfolioSummary(
-            currentValue: currentValue,
-            invested: invested,
-            result: result,
-            resultPercent: resultPercent,
-          ),
-          if (state.lastPortfolioRefresh != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Zuletzt aktualisiert: ${dateTimeText(state.lastPortfolioRefresh!)}',
-              style: const TextStyle(color: AppPalette.muted, fontSize: 11),
-            ),
-          ],
-          const SizedBox(height: 24),
-          const _SectionTitle(title: 'Positionen'),
-          const SizedBox(height: 12),
-          if (holdings.isEmpty)
-            _EmptyState(
-              icon: Icons.account_balance_wallet_outlined,
-              title: 'Dein Depot ist leer',
-              text: 'Füge Kaufpreis, Stückzahl und Kaufdatum hinzu.',
-              actionLabel: 'Erste Position hinzufügen',
-              onAction: () => _showAddHoldingSheet(context, state),
-            )
-          else
-            ...holdings.map(
-              (holding) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _HoldingCard(holding: holding),
+                  const SizedBox(width: 4),
+                  IconButton.filled(
+                    tooltip: 'Position hinzufügen',
+                    onPressed: () => _showAddHoldingSheet(context, state),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppPalette.lime,
+                      foregroundColor: AppPalette.onAccent,
+                    ),
+                    icon: const Icon(Icons.add_rounded),
+                  ),
+                ],
               ),
             ),
+            if (state.portfolioError != null) ...[
+              const SizedBox(height: 14),
+              _StatusNotice(
+                icon: Icons.sync_problem_rounded,
+                text: state.portfolioError!,
+              ),
+            ],
+            const SizedBox(height: 24),
+            _PortfolioSummary(
+              currentValue: currentValue,
+              invested: invested,
+              result: result,
+              resultPercent: resultPercent,
+            ),
+            if (state.lastPortfolioRefresh != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Zuletzt aktualisiert: ${dateTimeText(state.lastPortfolioRefresh!)}',
+                style: const TextStyle(color: AppPalette.muted, fontSize: 11),
+              ),
+            ],
+            const SizedBox(height: 24),
+            const _SectionTitle(title: 'Positionen'),
+            const SizedBox(height: 12),
+            if (holdings.isEmpty)
+              _EmptyState(
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'Dein Depot ist leer',
+                text: 'Füge Kaufpreis, Stückzahl und Kaufdatum hinzu.',
+                actionLabel: 'Erste Position hinzufügen',
+                onAction: () => _showAddHoldingSheet(context, state),
+              )
+            else
+              ...holdings.map(
+                (holding) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _HoldingCard(holding: holding),
+                ),
+              ),
           ],
         ),
       ),
@@ -460,8 +461,7 @@ class HistoryScreen extends StatelessWidget {
             )
           else
             ...state.history.map((snapshot) {
-              final instrument =
-                  snapshot.instrumentSnapshot ??
+              final instrument = snapshot.instrumentSnapshot ??
                   state.instrumentById(snapshot.instrumentId);
               if (instrument == null) {
                 return const SizedBox.shrink();
@@ -538,20 +538,21 @@ class _LearnScreenState extends State<LearnScreen> {
             const _EmptyState(
               icon: Icons.menu_book_outlined,
               title: 'Kein Begriff gefunden',
-              text: 'Versuche einen verwandten Begriff oder eine andere Schreibweise.',
+              text:
+                  'Versuche einen verwandten Begriff oder eine andere Schreibweise.',
             )
           else
             ...entries.asMap().entries.expand(
-              (item) => <Widget>[
-                _LearningCard(
-                  number: (item.key + 1).toString().padLeft(2, '0'),
-                  category: item.value.category,
-                  title: item.value.title,
-                  text: item.value.text,
+                  (item) => <Widget>[
+                    _LearningCard(
+                      number: (item.key + 1).toString().padLeft(2, '0'),
+                      category: item.value.category,
+                      title: item.value.title,
+                      text: item.value.text,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ),
-                const SizedBox(height: 12),
-              ],
-            ),
           const SizedBox(height: 8),
           const _RiskNotice(),
         ],
@@ -651,8 +652,6 @@ class InstrumentCard extends StatelessWidget {
   }
 }
 
-enum _DetailLevel { compact, standard, expert }
-
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({required this.instrument, super.key});
 
@@ -668,7 +667,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Set<String> _visibleScenarioIds = {};
   late String _venue = widget.instrument.defaultVenue;
   late ChartTimeframe _timeframe = widget.instrument.timeframe;
-  var _detailLevel = _DetailLevel.standard;
+  var _priceAction = false;
   var _showZones = true;
   var _isLoadingSeries = false;
   String? _seriesError;
@@ -680,9 +679,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       return;
     }
     _analysis = AppScope.of(context).analyze(_instrument);
-    _visibleScenarioIds = _analysis!.scenarios
-        .map((scenario) => scenario.id)
-        .toSet();
+    _visibleScenarioIds =
+        _analysis!.scenarios.map((scenario) => scenario.id).toSet();
   }
 
   Future<void> _loadTimeframe(ChartTimeframe timeframe) async {
@@ -778,8 +776,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     } on Object catch (error) {
       if (mounted) {
         setState(() {
-          _seriesError =
-              'Der Handelsplatz konnte nicht geladen werden: $error';
+          _seriesError = 'Der Handelsplatz konnte nicht geladen werden: $error';
         });
       }
     } finally {
@@ -832,219 +829,232 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 36),
           children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      instrument.name,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            color: AppPalette.ink,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.4,
-                          ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      '${instrument.assetType.label} · ${instrument.isin} · '
-                      '${instrument.originalCurrency}',
-                      style: const TextStyle(color: AppPalette.muted),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      instrument.assetType.tradingHours,
-                      style: const TextStyle(
-                        color: AppPalette.muted,
-                        fontSize: 11,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        instrument.name,
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: AppPalette.ink,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.4,
+                                ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        '${instrument.assetType.label} · ${instrument.isin} · '
+                        '${instrument.originalCurrency}',
+                        style: const TextStyle(color: AppPalette.muted),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        instrument.assetType.tradingHours,
+                        style: const TextStyle(
+                          color: AppPalette.muted,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _ScoreBadge(score: analysis.overallScore),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text(
+              euro(instrument.euroPrice),
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    color: AppPalette.ink,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1.2,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${number(instrument.originalPrice)} ${instrument.originalCurrency} '
+              '· FX ${number(instrument.fxRate, digits: 4)}',
+              style: const TextStyle(color: AppPalette.muted),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              'Kursstand ${dateTimeText(instrument.dataTimestamp)}',
+              key: const ValueKey('quote-timestamp'),
+              style: const TextStyle(
+                color: AppPalette.muted,
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              instrument.dataDelay,
+              style: const TextStyle(color: AppPalette.muted, fontSize: 10),
+            ),
+            if (_seriesError != null) ...[
+              const SizedBox(height: 12),
+              _StatusNotice(
+                  icon: Icons.sync_problem_rounded, text: _seriesError!),
+            ],
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: _CompactDropdown<String>(
+                    dropdownKey: const ValueKey('venue-dropdown'),
+                    label: 'Handelsplatz',
+                    value: _venue,
+                    items: instrument.venues,
+                    itemLabel: (value) => value,
+                    onChanged: _selectVenue,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _CompactDropdown<ChartTimeframe>(
+                    dropdownKey: const ValueKey('timeframe-dropdown'),
+                    label: 'Zeitraum',
+                    value: _timeframe,
+                    items: ChartTimeframe.values,
+                    itemLabel: (value) => value.label,
+                    onChanged: _loadTimeframe,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SegmentedButton<bool>(
+              key: const ValueKey('analysis-mode-tabs'),
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: false, label: Text('Elliott-Wellen')),
+                ButtonSegment(value: true, label: Text('Price Action')),
+              ],
+              selected: {_priceAction},
+              onSelectionChanged: (selection) =>
+                  setState(() => _priceAction = selection.single),
+            ),
+            const SizedBox(height: 18),
+            if (_priceAction)
+              PriceActionPanel(instrument: instrument, analysis: analysis)
+            else ...[
+              Stack(
+                children: [
+                  ElliottScenarioChart(
+                    instrument: instrument,
+                    analysis: analysis,
+                    visibleScenarioIds: _visibleScenarioIds,
+                    historyPoints: instrument.historyEuro.length,
+                    showZones: _showZones,
+                  ),
+                  if (_isLoadingSeries)
+                    const Positioned.fill(
+                      child: ColoredBox(
+                        color: Color(0x990B0D0A),
+                        child: Center(child: CircularProgressIndicator()),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
-              _ScoreBadge(score: analysis.overallScore),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            euro(instrument.euroPrice),
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              color: AppPalette.ink,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1.2,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${number(instrument.originalPrice)} ${instrument.originalCurrency} '
-            '· FX ${number(instrument.fxRate, digits: 4)}',
-            style: const TextStyle(color: AppPalette.muted),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            'Kursstand ${dateTimeText(instrument.dataTimestamp)}',
-            key: const ValueKey('quote-timestamp'),
-            style: const TextStyle(
-              color: AppPalette.muted,
-              fontSize: 11,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            instrument.dataDelay,
-            style: const TextStyle(color: AppPalette.muted, fontSize: 10),
-          ),
-          if (_seriesError != null) ...[
-            const SizedBox(height: 12),
-            _StatusNotice(icon: Icons.sync_problem_rounded, text: _seriesError!),
-          ],
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: _CompactDropdown<String>(
-                  dropdownKey: const ValueKey('venue-dropdown'),
-                  label: 'Handelsplatz',
-                  value: _venue,
-                  items: instrument.venues,
-                  itemLabel: (value) => value,
-                  onChanged: _selectVenue,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _CompactDropdown<ChartTimeframe>(
-                  dropdownKey: const ValueKey('timeframe-dropdown'),
-                  label: 'Zeitraum',
-                  value: _timeframe,
-                  items: ChartTimeframe.values,
-                  itemLabel: (value) => value.label,
-                  onChanged: _loadTimeframe,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _DetailLevelSelector(
-            value: _detailLevel,
-            onChanged: (value) => setState(() => _detailLevel = value),
-          ),
-          const SizedBox(height: 18),
-          Stack(
-              children: [
-                ElliottScenarioChart(
-                  instrument: instrument,
-                  analysis: analysis,
-                  visibleScenarioIds: _visibleScenarioIds,
-                  historyPoints: instrument.historyEuro.length,
-                  showZones: _showZones,
-                ),
-                if (_isLoadingSeries)
-                  const Positioned.fill(
-                    child: ColoredBox(
-                      color: Color(0x990B0D0A),
-                      child: Center(child: CircularProgressIndicator()),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: analysis.scenarios.map((scenario) {
+                  final selected = _visibleScenarioIds.contains(scenario.id);
+                  final color = scenarioColor(scenario.kind);
+                  return FilterChip(
+                    key: ValueKey('scenario-filter-${scenario.id}'),
+                    selected: selected,
+                    showCheckmark: false,
+                    avatar: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
+                    label: Text(
+                        '${scenario.kind.label} ${scenario.probability} %'),
+                    onSelected: (value) {
+                      setState(() {
+                        final updated = Set<String>.from(_visibleScenarioIds);
+                        if (value) {
+                          updated.add(scenario.id);
+                        } else {
+                          updated.remove(scenario.id);
+                        }
+                        _visibleScenarioIds = updated;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 10),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: const Text(
+                  'Ein-/Ausstiegszonen im Chart',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: const Text(
+                  'Blau = Einstieg, Szenariofarbe = Ziel, Rot = Stop-Loss',
+                  style: TextStyle(color: AppPalette.muted, fontSize: 11),
+                ),
+                value: _showZones,
+                onChanged: (value) => setState(() => _showZones = value),
+              ),
+              const SizedBox(height: 12),
+              _MarketRangeCard(instrument: instrument),
+              const SizedBox(height: 26),
+              _SectionTitle(
+                title: 'Hauptszenario',
+                trailing: '${primary.probability} %',
+              ),
+              const SizedBox(height: 12),
+              _ScenarioCard(scenario: primary, primary: true),
+              ...[
+                const SizedBox(height: 22),
+                const _SectionTitle(title: 'Alternative Zählungen'),
+                const SizedBox(height: 12),
+                ...analysis.scenarios
+                    .where((scenario) => scenario.id != primary.id)
+                    .map(
+                      (scenario) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _ScenarioCard(scenario: scenario),
+                      ),
+                    ),
+                const SizedBox(height: 12),
+                _ProbabilityExplanation(analysis: analysis),
               ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: analysis.scenarios.map((scenario) {
-              final selected = _visibleScenarioIds.contains(scenario.id);
-              final color = scenarioColor(scenario.kind);
-              return FilterChip(
-                key: ValueKey('scenario-filter-${scenario.id}'),
-                selected: selected,
-                showCheckmark: false,
-                avatar: Container(
-                  width: 9,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                label: Text('${scenario.kind.label} ${scenario.probability} %'),
-                onSelected: (value) {
-                  setState(() {
-                    final updated = Set<String>.from(_visibleScenarioIds);
-                    if (value) {
-                      updated.add(scenario.id);
-                    } else {
-                      updated.remove(scenario.id);
-                    }
-                    _visibleScenarioIds = updated;
-                  });
+              ...[
+                const SizedBox(height: 18),
+                _MarketDataDetails(instrument: instrument, analysis: analysis),
+              ],
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: () async {
+                  await state.saveAnalysis(analysis);
+                  if (!context.mounted) {
+                    return;
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Analyse als Snapshot gespeichert.'),
+                    ),
+                  );
                 },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 10),
-          SwitchListTile.adaptive(
-            contentPadding: EdgeInsets.zero,
-            title: const Text(
-              'Ein-/Ausstiegszonen im Chart',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-            subtitle: const Text(
-              'Blau = Einstieg, Szenariofarbe = Ziel, Rot = Stop-Loss',
-              style: TextStyle(color: AppPalette.muted, fontSize: 11),
-            ),
-            value: _showZones,
-            onChanged: (value) => setState(() => _showZones = value),
-          ),
-          const SizedBox(height: 12),
-          _MarketRangeCard(instrument: instrument),
-          const SizedBox(height: 26),
-          _SectionTitle(
-            title: 'Hauptszenario',
-            trailing: '${primary.probability} %',
-          ),
-          const SizedBox(height: 12),
-          _ScenarioCard(scenario: primary, primary: true),
-          if (_detailLevel != _DetailLevel.compact) ...[
-            const SizedBox(height: 22),
-            const _SectionTitle(title: 'Alternative Zählungen'),
-            const SizedBox(height: 12),
-            ...analysis.scenarios
-                .where((scenario) => scenario.id != primary.id)
-                .map(
-                  (scenario) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _ScenarioCard(scenario: scenario),
-                  ),
-                ),
-            const SizedBox(height: 12),
-            _ProbabilityExplanation(analysis: analysis),
-          ],
-          if (_detailLevel == _DetailLevel.expert) ...[
-            const SizedBox(height: 18),
-            _MarketDataDetails(instrument: instrument, analysis: analysis),
-          ],
-          const SizedBox(height: 18),
-          FilledButton.icon(
-            onPressed: () async {
-              await state.saveAnalysis(analysis);
-              if (!context.mounted) {
-                return;
-              }
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Analyse als Snapshot gespeichert.'),
-                ),
-              );
-            },
-            icon: const Icon(Icons.bookmark_add_outlined),
-            label: const Text('Analyse speichern'),
-          ),
-          const SizedBox(height: 16),
-          const _RiskNotice(),
+                icon: const Icon(Icons.bookmark_add_outlined),
+                label: const Text('Analyse speichern'),
+              ),
+            ],
+            const SizedBox(height: 16),
+            const _RiskNotice(),
           ],
         ),
       ),
@@ -1065,9 +1075,8 @@ class SnapshotScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final snapshotInstrument = snapshot.instrumentSnapshot ?? instrument;
-    final visibleIds = snapshot.scenarios
-        .map((scenario) => scenario.id)
-        .toSet();
+    final visibleIds =
+        snapshot.scenarios.map((scenario) => scenario.id).toSet();
     return Scaffold(
       appBar: AppBar(title: const Text('Analyse-Snapshot')),
       body: ListView(
@@ -1076,9 +1085,9 @@ class SnapshotScreen extends StatelessWidget {
           Text(
             snapshotInstrument.name,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: AppPalette.ink,
-            ),
+                  fontWeight: FontWeight.w800,
+                  color: AppPalette.ink,
+                ),
           ),
           const SizedBox(height: 6),
           Text(
@@ -1087,10 +1096,10 @@ class SnapshotScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           ElliottScenarioChart(
-              instrument: snapshotInstrument,
-              analysis: snapshot,
-              visibleScenarioIds: visibleIds,
-              historyPoints: snapshotInstrument.historyEuro.length,
+            instrument: snapshotInstrument,
+            analysis: snapshot,
+            visibleScenarioIds: visibleIds,
+            historyPoints: snapshotInstrument.historyEuro.length,
           ),
           const SizedBox(height: 22),
           _SectionTitle(
@@ -1154,58 +1163,6 @@ class _AssetFilterBar extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _DetailLevelSelector extends StatelessWidget {
-  const _DetailLevelSelector({required this.value, required this.onChanged});
-
-  final _DetailLevel value;
-  final ValueChanged<_DetailLevel> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    const labels = <_DetailLevel, String>{
-      _DetailLevel.compact: 'Kompakt',
-      _DetailLevel.standard: 'Standard',
-      _DetailLevel.expert: 'Experte',
-    };
-    return _SurfaceCard(
-      padding: const EdgeInsets.all(8),
-      child: Row(
-        children: _DetailLevel.values.map((level) {
-          final selected = value == level;
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(13),
-                onTap: () => onChanged(level),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: selected ? AppPalette.lime : Colors.transparent,
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    labels[level]!,
-                    style: TextStyle(
-                      color: selected
-                          ? AppPalette.onAccent
-                          : AppPalette.muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }
@@ -1390,10 +1347,10 @@ class _ScreenHeader extends StatelessWidget {
               child: Text(
                 title,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppPalette.ink,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.8,
-                ),
+                      color: AppPalette.ink,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.8,
+                    ),
               ),
             ),
             if (action != null) action!,
@@ -1624,8 +1581,8 @@ class _ScoreBadge extends StatelessWidget {
     final scoreColor = score >= 70
         ? AppPalette.lime
         : score >= 50
-        ? AppPalette.blue
-        : AppPalette.red;
+            ? AppPalette.blue
+            : AppPalette.red;
     return Container(
       width: 62,
       height: 62,
@@ -2086,9 +2043,8 @@ class _PortfolioSummary extends StatelessWidget {
                   label: 'ERGEBNIS',
                   value:
                       '${result >= 0 ? '+' : ''}${euro(result)} · ${percentage(resultPercent, signed: true)}',
-                  valueColor: positive
-                      ? AppPalette.lime
-                      : const Color(0xFFFF8791),
+                  valueColor:
+                      positive ? AppPalette.lime : const Color(0xFFFF8791),
                 ),
               ),
             ],
@@ -2167,9 +2123,8 @@ class _HoldingCard extends StatelessWidget {
     }
     final current = instrument.euroPrice * holding.quantity;
     final result = current - holding.investedEuro;
-    final resultPercent = holding.investedEuro == 0
-        ? 0.0
-        : result / holding.investedEuro * 100;
+    final resultPercent =
+        holding.investedEuro == 0 ? 0.0 : result / holding.investedEuro * 100;
     final positive = result >= 0;
 
     return _SurfaceCard(
@@ -2555,9 +2510,8 @@ Future<void> _showAddHoldingSheet(BuildContext context, AppState state) async {
                           isSearching = false;
                           searchError = null;
                           selectedInstrument = null;
-                          searchResults = state.marketData.instruments
-                              .take(5)
-                              .toList();
+                          searchResults =
+                              state.marketData.instruments.take(5).toList();
                         });
                         return;
                       }
@@ -2570,8 +2524,10 @@ Future<void> _showAddHoldingSheet(BuildContext context, AppState state) async {
                         const Duration(milliseconds: 450),
                         () async {
                           try {
-                            final results = await state.searchInstruments(query);
-                            if (!sheetContext.mounted || request != searchRequest) {
+                            final results =
+                                await state.searchInstruments(query);
+                            if (!sheetContext.mounted ||
+                                request != searchRequest) {
                               return;
                             }
                             setSheetState(() {
@@ -2579,7 +2535,8 @@ Future<void> _showAddHoldingSheet(BuildContext context, AppState state) async {
                               isSearching = false;
                             });
                           } on Object {
-                            if (!sheetContext.mounted || request != searchRequest) {
+                            if (!sheetContext.mounted ||
+                                request != searchRequest) {
                               return;
                             }
                             setSheetState(() {
@@ -2640,17 +2597,17 @@ Future<void> _showAddHoldingSheet(BuildContext context, AppState state) async {
                     )
                   else
                     ...searchResults.take(5).map(
-                      (instrument) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _HoldingInstrumentOption(
-                          instrument: instrument,
-                          selected: selectedInstrument?.id == instrument.id,
-                          onSelected: () => setSheetState(
-                            () => selectedInstrument = instrument,
+                          (instrument) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _HoldingInstrumentOption(
+                              instrument: instrument,
+                              selected: selectedInstrument?.id == instrument.id,
+                              onSelected: () => setSheetState(
+                                () => selectedInstrument = instrument,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
