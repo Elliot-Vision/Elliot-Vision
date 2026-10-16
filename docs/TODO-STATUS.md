@@ -2,6 +2,22 @@
 
 Stand: Version 0.4.1+7
 
+## Offen: Analyse-Reiter für Elliott-Wellen und Price Action
+
+Aufgenommen am 16. Oktober 2026; geplant, noch nicht implementiert.
+
+- Die bisherigen Reiter „Kompakt“, „Standard“ und „Experte“ entfernen und
+  durch „Elliott-Wellen“ und „Price Action“ ersetzen.
+- Mit den beiden Reitern später zwischen der Elliott-Wellen-Berechnung und
+  einer eigenen Price-Action-Ansicht wechseln können.
+- In der Price-Action-Ansicht verständlich erklären, wie einzelne Kerzen
+  aus den Kursen des ausgewählten Zeitintervalls entstehen: Eröffnung,
+  Hoch, Tief und Schluss (OHLC), Kerzenkörper, Dochte sowie steigende und
+  fallende Kerzen. Den Zusammenhang zwischen Zeitraum, Kerzenintervall und
+  einer noch nicht abgeschlossenen Kerze erläutern.
+- Bestehende Erklärungen aus den drei Informationsebenen bei der späteren
+  Umstellung sinnvoll in die beiden Analyseansichten einordnen.
+
 ## Entwicklungsbranch EV-018 / EV-019
 
 - Separater Test-Tab mit eigenen, sichtbar gekennzeichneten Demodaten.
