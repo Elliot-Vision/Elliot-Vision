@@ -60,12 +60,28 @@ void main() {
     await tester.tap(find.text('1 Tag').last);
     await tester.pumpAndSettle();
     expect(chart().instrument.timeframe, ChartTimeframe.oneDay);
-    expect(chart().instrument.pricePoints.length, 24);
+    expect(chart().instrument.pricePoints.length, 289);
+    expect(
+        chart()
+            .instrument
+            .pricePoints
+            .last
+            .timestamp
+            .difference(chart().instrument.pricePoints.first.timestamp),
+        const Duration(days: 1));
     await tester.tap(find.byKey(const ValueKey('test-timeframe')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Max').last);
     await tester.pumpAndSettle();
     expect(chart().instrument.pricePoints.length, originalCount);
+    expect(
+        chart()
+            .instrument
+            .pricePoints
+            .last
+            .timestamp
+            .difference(chart().instrument.pricePoints.first.timestamp),
+        const Duration(days: 3650));
     await tester.tap(find.byKey(const ValueKey('test-instrument')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Microsoft Corp. (MSFT)').last);

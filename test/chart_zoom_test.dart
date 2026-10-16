@@ -59,14 +59,23 @@ void main() {
     final x = 58 + (rect.width - 72) * 0.32;
     await finger.moveTo(rect.topLeft + Offset(x, 150));
     await tester.pump();
-    final index = ((points.length - 1) / 2).round();
+    final position = (points.length - 1) / 2;
+    final index = position.floor();
+    final price = points[index].euro +
+        (points[index + 1].euro - points[index].euro) * (position - index);
     final label = tester
         .widget<Text>(find.byKey(const ValueKey('chart-inspection')))
         .data!;
     expect(
-        label,
-        contains(
-            '${points[index].euro.toStringAsFixed(2).replaceAll('.', ',')} €'));
+        label, contains('${price.toStringAsFixed(2).replaceAll('.', ',')} €'));
+    expect(label, contains('interpoliert'));
+    await finger.moveBy(const Offset(2, 0));
+    await tester.pump();
+    expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('chart-inspection')))
+            .data,
+        isNot(label));
     expect(find.text('Zurücksetzen (1.0×)'), findsOneWidget);
     await finger
         .moveTo(rect.topLeft + Offset(58 + (rect.width - 72) * 0.9, 150));

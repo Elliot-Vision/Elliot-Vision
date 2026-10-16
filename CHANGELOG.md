@@ -1,5 +1,8 @@
 # Unveröffentlicht – EV-018 / EV-019
 
+- Test-Chart frei ohne Kartenhintergrund, mit geringerem Seitenabstand.
+- Eigene synthetische Demoreihen mit tatsächlicher Zeitspanne pro Auswahl; Max zeigt zehn Jahre.
+- Einfinger-Ablesen zwischen Datenpunkten interpoliert, mit entsprechender Kennzeichnung.
 - Test-Tab mit Demo-Wertpapierauswahl, sieben Zeiträumen, einzelnen Szenarioschaltern und Zonenschalter erweitert.
 - Offene Geräteprobleme: Einfinger-Kursabfrage noch nicht abgenommen; letzte Korrektur dafür zurückgenommen.
 - Isolierter Test-Tab mit Demodaten.

@@ -46,13 +46,15 @@ Bedienabläufe zu erhalten. Diese Abweichung vom älteren Plan bleibt sichtbar.
 - Pinch-Zoom ist kontinuierlich zwischen 1x und 20x; horizontaler Drag
   verschiebt den Ausschnitt innerhalb der Datenränder. Reset und Doppeltippen
   stellen die Übersicht wieder her. Ein Finger vertikal scrollt die Seite.
-  Zwei Finger übernehmen Zoom und Verschieben. Die ergänzte Einfinger-Kursabfrage
-  funktioniert auf dem Nutzergerät noch nicht zuverlässig; der letzte
-  Korrekturversuch wurde zurückgenommen. Dieser Punkt bleibt offen.
+  Zwei Finger übernehmen Zoom und Verschieben. Der Nutzer bestätigt inzwischen
+  die Einfinger-Kursabfrage, bemängelt jedoch die Abstufungen. Die Anzeige
+  interpoliert deshalb nun entlang der Linie und kennzeichnet die Zwischenwerte.
 - Der Test-Tab bietet Demo-Wertpapierauswahl, alle sieben Zeiträume,
   einzelne Schalter für bullische/neutrale/bärische Szenarien und einen
-  Zonenschalter. Filter bleiben beim Wechsel erhalten; beim Zeitraumwechsel
-  wird immer die vollständige ursprüngliche Demo-Zeitreihe verwendet.
+  Zonenschalter. Filter bleiben beim Wechsel erhalten. Ein eigener synthetischer
+  Datengenerator bildet die tatsächliche Zeitspanne ab (24 Stunden bis zehn
+  Jahre), mit expliziten Zeitstempeln und gemeinsamem Endkurs. Keine echten
+  historischen Börsenkurse. Der Test-Chart hat keinen Kartenhintergrund mehr.
 - Verlauf, Projektionen, Zonen und Wellenmarkierungen werden gemeinsam
   horizontal transformiert und am Plot begrenzt. Die Euro-Achse bleibt stabil,
   die Zeitbeschriftungen folgen dem sichtbaren historischen Ausschnitt.
@@ -70,7 +72,7 @@ Flutter 3.44.0 / Dart 3.12.0, festgeschriebene pubspec.lock:
 
 - flutter pub get --enforce-lockfile: erfolgreich.
 - flutter analyze --no-pub: ohne Befund.
-- flutter test --no-pub: 32 Tests erfolgreich (19 bestehende, 13 neue).
+- flutter test --no-pub: 34 Tests erfolgreich (19 bestehende, 15 neue).
 - Neue Tests: Fokusverankerung, Zoomgrenzen, Pan-Grenzen, echte Pinch-Geste,
   Neuzeichnung und Filtererhalt, Reset, Zeitraumwechsel, vertikales Scrollen,
   Navigation bei 390 Pixel Breite und unveränderte gespeicherte App-Daten.

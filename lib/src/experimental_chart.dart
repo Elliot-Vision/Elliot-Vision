@@ -67,7 +67,7 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
   ChartViewport _gestureStart = const ChartViewport();
   double _focalStart = 0;
   bool _restored = false;
-  int? _selectedIndex;
+  double? _selectedIndex;
   bool _selectedProjection = false;
 
   void _inspect(Offset position, double width) {
@@ -81,20 +81,33 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
           ? null
           : start +
               (fraction / 0.64 * (points.length - start - 1))
-                  .round()
-                  .clamp(0, points.length - start - 1);
+                  .clamp(0.0, (points.length - start - 1).toDouble());
     });
   }
 
   String get _inspectionLabel {
     if (_selectedProjection) return 'Projektion – kein historischer Kurs';
     if (_selectedIndex == null) return 'Mit einem Finger einen Kurs auswählen';
-    final point = widget.instrument.pricePoints[_selectedIndex!];
-    final date = point.timestamp.toLocal();
+    final points = widget.instrument.pricePoints;
+    final low = _selectedIndex!.floor();
+    final high = math.min(low + 1, points.length - 1);
+    final fraction = _selectedIndex! - low;
+    final price =
+        points[low].euro + (points[high].euro - points[low].euro) * fraction;
+    final date = points[low]
+        .timestamp
+        .add(Duration(
+            microseconds: (points[high]
+                        .timestamp
+                        .difference(points[low].timestamp)
+                        .inMicroseconds *
+                    fraction)
+                .round()))
+        .toLocal();
     String two(int value) => value.toString().padLeft(2, '0');
-    return '${point.euro.toStringAsFixed(2).replaceAll('.', ',')} € · '
+    return '≈ ${price.toStringAsFixed(2).replaceAll('.', ',')} € · '
         '${two(date.day)}.${two(date.month)}.${date.year} '
-        '${two(date.hour)}:${two(date.minute)}';
+        '${two(date.hour)}:${two(date.minute)} · interpoliert';
   }
 
   String get _storageId => 'chart-viewport-${widget.instrument.id}-'
@@ -315,7 +328,7 @@ class _ChartPainter extends CustomPainter {
   final int historyPoints;
   final bool showZones;
   final ChartViewport viewport;
-  final int? selectedIndex;
+  final double? selectedIndex;
 
   double _x(double original, double left, double right) =>
       left +
@@ -325,12 +338,6 @@ class _ChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final background = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      const Radius.circular(20),
-    );
-    canvas.drawRRect(background, Paint()..color = AppPalette.surface);
-
     const left = 58.0;
     const right = 14.0;
     const top = 34.0;
@@ -564,7 +571,10 @@ class _ChartPainter extends CustomPainter {
       final localIndex = selectedIndex! - startIndex;
       if (localIndex >= 0 && localIndex < history.length) {
         final x = xFor(0.64 * localIndex / (history.length - 1));
-        final y = yFor(history[localIndex].euro);
+        final low = localIndex.floor();
+        final high = math.min(low + 1, history.length - 1);
+        final y = yFor(history[low].euro +
+            (history[high].euro - history[low].euro) * (localIndex - low));
         final markerPaint = Paint()
           ..color = AppPalette.ink
           ..strokeWidth = 1;

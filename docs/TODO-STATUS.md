@@ -8,7 +8,9 @@ Stand: Version 0.4.1+7
 - Demo-Wertpapierauswahl, sieben Zeiträume, Szenarien einzeln schaltbar und Zonen ein-/ausblendbar.
 - Stufenloser horizontaler Zoom ausschließlich im experimentellen Chart.
 - Zoom und Scrollen auf dem zurückgenommenen Stand auf Android bestätigt; Verschieben und Reset zuvor ebenfalls bestätigt.
-- Geräteprüfung der neuen Auswahlmöglichkeiten ausstehend; Einfinger-Kursabfrage weiterhin offen.
+- Nutzer bestätigt fünf Demo-Aktien, Einfinger-Kursabfrage und funktionierenden Zoom.
+- Zeitraum-Demoreihen und kontinuierlich interpoliertes Ablesen nachgebessert; neue Geräteprüfung ausstehend.
+- Rahmenlose Darstellung ohne Kartenhintergrund im Test-Tab ergänzt.
 - Reguläre Analyse bleibt unverändert.
 - Vollständiger Abgleich: [Repository-Prüfung](REPOSITORY-ABGLEICH-EV018-EV019.md).
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'analysis_engine.dart';
 import 'demo_data.dart';
 import 'experimental_chart.dart';
+import 'experimental_demo_series.dart';
 import 'models.dart';
 
 /// Eigene Demodaten, keine Verbindung zum produktiven AppState oder Speicher.
@@ -16,21 +17,19 @@ class TestScreen extends StatefulWidget {
 class _TestScreenState extends State<TestScreen> {
   final _repository = DemoMarketDataRepository();
   late final List<Instrument> _instruments = List.of(_repository.instruments);
-  late Instrument _instrument = _instruments.first;
+  late Instrument _instrument =
+      experimentalDemoSeries(_instruments.first, ChartTimeframe.maximum);
   late AnalysisResult _analysis = RuleBasedAnalysisGateway().analyze(
     _instrument,
     now: DateTime.utc(2026, 8, 4),
   );
   final _visibleKinds = ScenarioKind.values.toSet();
   bool _showZones = true;
-  int _request = 0;
 
-  Future<void> _select(String id, ChartTimeframe timeframe) async {
-    final request = ++_request;
+  void _select(String id, ChartTimeframe timeframe) {
     // Always use the complete demo series, including when returning from 1D.
     final source = _instruments.firstWhere((item) => item.id == id);
-    final instrument = await _repository.loadSeries(source, timeframe);
-    if (!mounted || request != _request) return;
+    final instrument = experimentalDemoSeries(source, timeframe);
     setState(() {
       _instrument = instrument;
       _analysis = RuleBasedAnalysisGateway()
@@ -43,13 +42,13 @@ class _TestScreenState extends State<TestScreen> {
     return SafeArea(
       child: ListView(
         key: const ValueKey('test-content-list'),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
         children: [
           Text('Testbereich',
               style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           const Text(
-            'Experimenteller Chart mit Demodaten – keine aktuellen Kurse. '
+            'Experimenteller Chart mit synthetischen Demodaten – keine aktuellen Kurse. '
             'Depot, Favoriten und Analysehistorie werden nicht verändert.',
           ),
           const SizedBox(height: 20),
