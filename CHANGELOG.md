@@ -1,5 +1,6 @@
 # Unveröffentlicht – EV-018 / EV-019
 
+- Linke Euro-Achsenbeschriftung im Test-Chart entfernt; Kursverlauf erhält 44 Pixel mehr Breite. Preisabfrage und Zoom verwenden dieselben neuen Plot-Grenzen.
 - Test-Chart frei ohne Kartenhintergrund, mit geringerem Seitenabstand.
 - Eigene synthetische Demoreihen mit tatsächlicher Zeitspanne pro Auswahl; Max zeigt zehn Jahre.
 - Einfinger-Ablesen zwischen Datenpunkten interpoliert, mit entsprechender Kennzeichnung.

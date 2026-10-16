@@ -6,6 +6,8 @@ import 'package:flutter/gestures.dart';
 import 'app.dart';
 import 'models.dart';
 
+const _chartSideInset = 14.0;
+
 Color scenarioColor(ScenarioKind kind) {
   switch (kind) {
     case ScenarioKind.bullish:
@@ -158,7 +160,10 @@ class _ExperimentalScenarioChartState extends State<ExperimentalScenarioChart> {
   }
 
   double _focalFraction(Offset focal, double width) =>
-      ((focal.dx - 58) / math.max(1.0, width - 72)).clamp(0.0, 1.0).toDouble();
+      ((focal.dx - _chartSideInset) /
+              math.max(1.0, width - 2 * _chartSideInset))
+          .clamp(0.0, 1.0)
+          .toDouble();
 
   @override
   Widget build(BuildContext context) {
@@ -338,8 +343,8 @@ class _ChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const left = 58.0;
-    const right = 14.0;
+    const left = _chartSideInset;
+    const right = _chartSideInset;
     const top = 34.0;
     const bottom = 52.0;
     final plotWidth = size.width - left - right;
@@ -430,15 +435,6 @@ class _ChartPainter extends CustomPainter {
       final y = top + (plotHeight / 4) * index;
       canvas.drawLine(
           Offset(left, y), Offset(size.width - right, y), gridPaint);
-      final value = maxValue - (maxValue - minValue) * index / 4;
-      _paintTextRight(
-        canvas,
-        _axisEuro(value),
-        Offset(left - 7, y - 6),
-        color: AppPalette.muted,
-        fontSize: 9,
-        fontWeight: FontWeight.w600,
-      );
     }
     canvas.save();
     canvas.clipRect(Rect.fromLTWH(left, top, plotWidth, plotHeight));

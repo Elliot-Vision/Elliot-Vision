@@ -53,10 +53,10 @@ void main() {
     final rect = tester.getRect(find.byKey(const ValueKey('chart-gestures')));
     final points = DemoMarketDataRepository().byId('aapl').pricePoints;
     final finger =
-        await tester.startGesture(rect.topLeft + const Offset(58, 150));
+        await tester.startGesture(rect.topLeft + const Offset(14, 150));
     await finger.moveTo(rect.topLeft + const Offset(100, 150));
     await tester.pump();
-    final x = 58 + (rect.width - 72) * 0.32;
+    final x = 14 + (rect.width - 28) * 0.32;
     await finger.moveTo(rect.topLeft + Offset(x, 150));
     await tester.pump();
     final position = (points.length - 1) / 2;
@@ -78,7 +78,7 @@ void main() {
         isNot(label));
     expect(find.text('Zurücksetzen (1.0×)'), findsOneWidget);
     await finger
-        .moveTo(rect.topLeft + Offset(58 + (rect.width - 72) * 0.9, 150));
+        .moveTo(rect.topLeft + Offset(14 + (rect.width - 28) * 0.9, 150));
     await tester.pump();
     expect(find.text('Projektion – kein historischer Kurs'), findsOneWidget);
     await finger.up();
