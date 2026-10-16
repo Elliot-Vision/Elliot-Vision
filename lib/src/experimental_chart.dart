@@ -10,6 +10,8 @@ class ExperimentalScenarioChart extends ElliottScenarioChart {
     required super.visibleScenarioIds,
     required super.historyPoints,
     super.showZones,
+    super.highlightedScenarioId,
+    super.onScenarioSelected,
     super.key,
   });
 }

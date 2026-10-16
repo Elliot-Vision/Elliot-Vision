@@ -7,6 +7,72 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('Berührung einer Projektion hebt Szenario und Zonen hervor',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester
+        .pumpWidget(const MaterialApp(home: Scaffold(body: TestScreen())));
+    final gestures = find.byKey(const ValueKey('chart-gestures'));
+    await tester.ensureVisible(gestures);
+    await tester.pumpAndSettle();
+    final rect = tester.getRect(gestures);
+    final dynamic painter = tester
+        .widget<CustomPaint>(find.byKey(const ValueKey('scenario-chart-paint')))
+        .painter;
+    Offset? hit;
+    String? expected;
+    // Find a selectable line/band in the rendered projection region.
+    for (double y = 40; y < 290; y += 3) {
+      final point = Offset(rect.width * 0.9, y);
+      final String? id = painter.scenarioAt(point, rect.size);
+      if (id != null) {
+        hit = point;
+        expected = id;
+        break;
+      }
+    }
+    expect(hit, isNotNull);
+    expect(painter.scenarioAt(const Offset(30, 150), rect.size), isNull);
+    await tester.tapAt(rect.topLeft + hit!);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    var chart = tester.widget<ExperimentalScenarioChart>(
+        find.byType(ExperimentalScenarioChart));
+    expect(chart.highlightedScenarioId, expected);
+    final pageScroll = find
+        .descendant(
+            of: find.byKey(const ValueKey('test-content-list')),
+            matching: find.byType(Scrollable))
+        .first;
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('test-scenario-details')), 150,
+        scrollable: pageScroll);
+    await tester.pumpAndSettle();
+    expect(find.text('Einstiegsbereich · blau'), findsOneWidget);
+    expect(find.text('Ausstiegsbereich · Szenariofarbe'), findsOneWidget);
+    await tester.scrollUntilVisible(
+        find.text('Verwendete Daten und Herleitung'), 200,
+        scrollable: pageScroll);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verwendete Daten und Herleitung'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectableText), findsWidgets);
+    await tester.scrollUntilVisible(find.text('Hervorhebung aufheben'), -200,
+        scrollable: pageScroll);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hervorhebung aufheben'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(gestures, -150, scrollable: pageScroll);
+    await tester.pumpAndSettle();
+    chart = tester.widget<ExperimentalScenarioChart>(
+        find.byType(ExperimentalScenarioChart));
+    expect(chart.highlightedScenarioId, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Test-Reiter wechseln und erhalten Demo-Auswahl und Filter',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);

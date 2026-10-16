@@ -19,6 +19,12 @@ In regulärer Analyse und Testbereich umgesetzt; Geräteabnahme steht aus.
 
 ## Entwicklungsbranch EV-018 / EV-019
 
+- Testbereich: Projektion oder Einstiegs-/Ausstiegszone antippen, um das
+  zugehörige Szenario hervorzuheben. Zusätzliche beschriftete Szenarioauswahl,
+  aufhebbare Hervorhebung und Detailansicht mit Kurswerten und Erklärungen.
+- Detailansicht zeigt verwendete Demoreihe, Zeitraum, jüngste Spanne,
+  Zählmethode, Regelprüfungen und Bewertungsfaktoren. Android-Abnahme ausstehend.
+
 - Separater Test-Tab mit eigenen, sichtbar gekennzeichneten Demodaten.
 - Demo-Wertpapierauswahl, sieben Zeiträume, Szenarien einzeln schaltbar und Zonen ein-/ausblendbar.
 - Stufenloser horizontaler Zoom im gemeinsamen Chart.

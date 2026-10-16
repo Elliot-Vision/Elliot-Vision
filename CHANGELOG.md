@@ -1,5 +1,7 @@
 # Unveröffentlicht – EV-018 / EV-019
 
+- Testbereich: Projektion und Zonen per Antippen auswählbar; aktive Linie und Einstiegs-/Ausstiegsbereiche hervorgehoben. Zugeordnete Kurswerte, Stop-Loss, Invalidierung und verwendete Daten mit Herleitung ergänzt. Alternativauswahl über beschriftete Schalter; Zoom und reguläre Analyse bleiben verfügbar.
+
 - Reguläre Analyse und Testbereich mit Reitern „Elliott-Wellen“ und „Price Action“; alte Informationsebenen ersetzt, Elliott-Erklärungen erhalten.
 - Price Action mit OHLC-Kerzenchart, Fingerabfrage der vier Kerzenwerte, regelbasierter Beschreibung und Erklärungen zu Körpern, Dochten und Intervallen. Anbieter-OHLC werden umgerechnet und gespeichert; fehlende Kerzen bleiben sichtbar fehlend.
 - Horizontale Kursabfrage gegen vertikales Zittern und Richtungswechsel abgesichert; Punkteliste zwischengespeichert und Zeichnung unsichtbarer Projektionsstriche reduziert.

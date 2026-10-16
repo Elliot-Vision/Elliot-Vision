@@ -6,6 +6,7 @@ import 'experimental_chart.dart';
 import 'experimental_demo_series.dart';
 import 'models.dart';
 import 'price_action.dart';
+import 'scenario_details.dart';
 
 /// Eigene Demodaten, keine Verbindung zum produktiven AppState oder Speicher.
 class TestScreen extends StatefulWidget {
@@ -27,6 +28,7 @@ class _TestScreenState extends State<TestScreen> {
   final _visibleKinds = ScenarioKind.values.toSet();
   bool _showZones = true;
   bool _priceAction = false;
+  String? _highlightedScenarioId;
 
   List<AnalysisScenario> get _testScenarios {
     final ranked = List<AnalysisScenario>.of(_analysis.scenarios)
@@ -45,6 +47,7 @@ class _TestScreenState extends State<TestScreen> {
     final instrument = experimentalDemoSeries(source, timeframe);
     setState(() {
       _instrument = instrument;
+      _highlightedScenarioId = null;
       _analysis = RuleBasedAnalysisGateway()
           .analyze(instrument, now: DateTime.utc(2026, 8, 4));
     });
@@ -123,7 +126,32 @@ class _TestScreenState extends State<TestScreen> {
                   .toSet(),
               historyPoints: _instrument.pricePoints.length,
               showZones: _showZones,
+              highlightedScenarioId: _highlightedScenarioId,
+              onScenarioSelected: (id) =>
+                  setState(() => _highlightedScenarioId = id),
             ),
+            const Text(
+                'Projektion oder farbigen Bereich antippen, um das Szenario hervorzuheben. '
+                'Alternativ unten ein Szenario auswählen.'),
+            Wrap(spacing: 8, children: [
+              for (final scenario in _testScenarios
+                  .where((s) => _visibleKinds.contains(s.kind)))
+                ChoiceChip(
+                  key: ValueKey('test-highlight-${scenario.kind.name}'),
+                  label: Text('${scenario.kind.label} hervorheben'),
+                  selected: scenario.id == _highlightedScenarioId,
+                  onSelected: (selected) => setState(() =>
+                      _highlightedScenarioId = selected ? scenario.id : null),
+                ),
+            ]),
+            if (_highlightedScenarioId != null)
+              ScenarioDetails(
+                instrument: _instrument,
+                scenario: _testScenarios
+                    .firstWhere((s) => s.id == _highlightedScenarioId),
+                zonesVisible: _showZones,
+                onClear: () => setState(() => _highlightedScenarioId = null),
+              ),
             const SizedBox(height: 16),
             Text('Szenarien', style: Theme.of(context).textTheme.titleMedium),
             const Text('Hauptszenario und stärkste Alternative'),
@@ -136,6 +164,12 @@ class _TestScreenState extends State<TestScreen> {
                         label: Text(kind.label),
                         selected: _visibleKinds.contains(kind),
                         onSelected: (selected) => setState(() {
+                          if (!selected &&
+                              _testScenarios.any((s) =>
+                                  s.kind == kind &&
+                                  s.id == _highlightedScenarioId)) {
+                            _highlightedScenarioId = null;
+                          }
                           selected
                               ? _visibleKinds.add(kind)
                               : _visibleKinds.remove(kind);

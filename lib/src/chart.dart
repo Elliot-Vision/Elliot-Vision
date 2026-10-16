@@ -52,6 +52,8 @@ class ElliottScenarioChart extends StatefulWidget {
     required this.historyPoints,
     this.showZones = true,
     this.candleMode = false,
+    this.highlightedScenarioId,
+    this.onScenarioSelected,
     super.key,
   });
 
@@ -61,6 +63,8 @@ class ElliottScenarioChart extends StatefulWidget {
   final int historyPoints;
   final bool showZones;
   final bool candleMode;
+  final String? highlightedScenarioId;
+  final ValueChanged<String?>? onScenarioSelected;
 
   @override
   State<ElliottScenarioChart> createState() => _ElliottScenarioChartState();
@@ -79,6 +83,23 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
           .toList()
       : widget.instrument.pricePoints;
   late List<PricePoint> _inspectionPoints = _points();
+
+  _ChartPainter _scenarioPainter(Set<String> ids) => _ChartPainter(
+        instrument: widget.instrument,
+        analysis: widget.analysis,
+        visibleScenarioIds: ids,
+        historyPoints: widget.historyPoints,
+        showZones: widget.showZones,
+        viewport: _viewport,
+        selectedIndex: _selectedIndex,
+        highlightedScenarioId: widget.highlightedScenarioId,
+      );
+
+  void _selectProjection(Offset position, Size size) {
+    if (widget.onScenarioSelected == null || widget.candleMode) return;
+    widget.onScenarioSelected!(
+        _scenarioPainter(widget.visibleScenarioIds).scenarioAt(position, size));
+  }
 
   void _inspect(Offset position, double width) {
     final fraction =
@@ -215,6 +236,10 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
             child: LayoutBuilder(
               builder: (context, constraints) => GestureDetector(
                 behavior: HitTestBehavior.opaque,
+                onTapUp: widget.onScenarioSelected == null
+                    ? null
+                    : (details) => _selectProjection(
+                        details.localPosition, Size(constraints.maxWidth, 350)),
                 onDoubleTap: () => _setViewport(const ChartViewport()),
                 child: RawGestureDetector(
                   key: const ValueKey('chart-gestures'),
@@ -267,15 +292,7 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
                             start: _viewport.start,
                             end: _viewport.end,
                             selected: _selectedIndex)
-                        : _ChartPainter(
-                            instrument: widget.instrument,
-                            analysis: widget.analysis,
-                            visibleScenarioIds: visibleIds,
-                            historyPoints: widget.historyPoints,
-                            showZones: widget.showZones,
-                            viewport: _viewport,
-                            selectedIndex: _selectedIndex,
-                          ),
+                        : _scenarioPainter(visibleIds),
                   )),
                 ),
               ),
@@ -365,6 +382,7 @@ class _ChartPainter extends CustomPainter {
     required this.showZones,
     required this.viewport,
     this.selectedIndex,
+    this.highlightedScenarioId,
   });
 
   final Instrument instrument;
@@ -374,6 +392,92 @@ class _ChartPainter extends CustomPainter {
   final bool showZones;
   final ChartViewport viewport;
   final double? selectedIndex;
+  final String? highlightedScenarioId;
+
+  /// Uses the same plot limits and price range as paint, after zoom/pan.
+  String? scenarioAt(Offset position, Size size) {
+    const left = _chartSideInset;
+    final width = size.width - left * 2;
+    final fraction =
+        viewport.start + (position.dx - left) / width * viewport.span;
+    if (fraction < 0.64 ||
+        fraction > 1 ||
+        position.dy < 34 ||
+        position.dy > size.height - 52) {
+      return null;
+    }
+    final scenarios = analysis.scenarios
+        .where((s) => visibleScenarioIds.contains(s.id))
+        .toList();
+    final points = instrument.pricePoints;
+    final values = <double>[
+      ...points
+          .skip(math.max(0, points.length - historyPoints))
+          .map((p) => p.euro),
+      instrument.euroPrice,
+      for (final s in scenarios) ...[
+        ...s.projectionEuro,
+        s.targetEuro,
+        s.invalidationEuro,
+        s.entryLowEuro,
+        s.entryHighEuro,
+        s.exitLowEuro,
+        s.exitHighEuro,
+        s.stopLossEuro,
+      ],
+    ];
+    final low = values.reduce(math.min);
+    final high = values.reduce(math.max);
+    final range = math.max(high - low, math.max(high.abs() * 0.04, 0.01));
+    double y(double price) =>
+        34 +
+        (size.height - 86) *
+            (1 - (price - low + range * 0.1) / (high - low + range * 0.2));
+    double x(double f) => left + (f - viewport.start) / viewport.span * width;
+    double distance(Offset p, Offset a, Offset b) {
+      final d = b - a;
+      final t = d.distanceSquared == 0
+          ? 0.0
+          : ((p - a).dx * d.dx + (p - a).dy * d.dy) / d.distanceSquared;
+      return (p - (a + d * t.clamp(0.0, 1.0))).distance;
+    }
+
+    String? closest;
+    var best = 24.0;
+    for (final s in scenarios) {
+      var previous = Offset(x(0.64), y(instrument.euroPrice));
+      for (var i = 0; i < s.projectionEuro.length; i++) {
+        final next = Offset(x(0.64 + 0.36 * (i + 1) / s.projectionEuro.length),
+            y(s.projectionEuro[i]));
+        final delta = distance(position, previous, next);
+        if (delta < best) {
+          best = delta;
+          closest = s.id;
+        }
+        previous = next;
+      }
+    }
+    if (closest != null || !showZones) return closest;
+    // Overlapping bands keep the current scenario selected where possible.
+    final ranked = [...scenarios]..sort((a, b) => a.id == b.id
+        ? 0
+        : a.id == highlightedScenarioId
+            ? -1
+            : b.id == highlightedScenarioId
+                ? 1
+                : 0);
+    for (final s in ranked) {
+      for (final band in [
+        [s.entryLowEuro, s.entryHighEuro],
+        [s.exitLowEuro, s.exitHighEuro]
+      ]) {
+        if (position.dy >= y(band[1]) - 8 && position.dy <= y(band[0]) + 8) {
+          return s.id;
+        }
+      }
+    }
+    return null;
+  }
 
   double _x(double original, double left, double right) =>
       left +
@@ -437,7 +541,12 @@ class _ChartPainter extends CustomPainter {
     canvas.clipRect(Rect.fromLTWH(left, top, plotWidth, plotHeight));
     if (showZones) {
       for (final scenario in visibleScenarios) {
+        if (highlightedScenarioId != null &&
+            scenario.id != highlightedScenarioId) {
+          continue;
+        }
         final primary = scenario.id == analysis.primaryScenarioId;
+        final emphasized = scenario.id == highlightedScenarioId;
         final color = scenarioColor(scenario.kind);
         _drawZone(
           canvas,
@@ -445,7 +554,11 @@ class _ChartPainter extends CustomPainter {
           projectionEndX,
           yFor(scenario.entryLowEuro),
           yFor(scenario.entryHighEuro),
-          AppPalette.blue.withAlpha(primary ? 34 : 16),
+          AppPalette.blue.withAlpha(emphasized
+              ? 95
+              : primary
+                  ? 34
+                  : 16),
         );
         _drawZone(
           canvas,
@@ -453,7 +566,11 @@ class _ChartPainter extends CustomPainter {
           projectionEndX,
           yFor(scenario.exitLowEuro),
           yFor(scenario.exitHighEuro),
-          color.withAlpha(primary ? 30 : 14),
+          color.withAlpha(emphasized
+              ? 95
+              : primary
+                  ? 30
+                  : 14),
         );
         _drawDashedLine(
           canvas,
@@ -533,7 +650,9 @@ class _ChartPainter extends CustomPainter {
         scenarioIndex < visibleScenarios.length;
         scenarioIndex++) {
       final scenario = visibleScenarios[scenarioIndex];
-      final color = scenarioColor(scenario.kind);
+      final emphasized = scenario.id == highlightedScenarioId;
+      final color = scenarioColor(scenario.kind)
+          .withAlpha(highlightedScenarioId == null || emphasized ? 255 : 55);
       final path = Path()..moveTo(historyEndX, yFor(instrument.euroPrice));
       for (var index = 0; index < scenario.projectionEuro.length; index++) {
         final x = historyEndX +
@@ -545,7 +664,11 @@ class _ChartPainter extends CustomPainter {
         path,
         Paint()
           ..color = color
-          ..strokeWidth = scenario.id == analysis.primaryScenarioId ? 3 : 1.8
+          ..strokeWidth = emphasized
+              ? 4.5
+              : scenario.id == analysis.primaryScenarioId
+                  ? 3
+                  : 1.8
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round
           ..style = PaintingStyle.stroke,
@@ -890,7 +1013,8 @@ class _ChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ChartPainter oldDelegate) {
-    return oldDelegate.selectedIndex != selectedIndex ||
+    return oldDelegate.highlightedScenarioId != highlightedScenarioId ||
+        oldDelegate.selectedIndex != selectedIndex ||
         oldDelegate.viewport.start != viewport.start ||
         oldDelegate.viewport.end != viewport.end ||
         oldDelegate.instrument.id != instrument.id ||
