@@ -146,6 +146,7 @@ class _TestScreenState extends State<TestScreen> {
             ]),
             if (_highlightedScenarioId != null)
               ScenarioDetails(
+                isDemo: true,
                 instrument: _instrument,
                 scenario: _testScenarios
                     .firstWhere((s) => s.id == _highlightedScenarioId),

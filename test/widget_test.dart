@@ -2,8 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:elliott_vision/elliott_vision.dart';
+import 'package:elliott_vision/src/scenario_details.dart';
 
 void main() {
+  testWidgets(
+      'Reguläre Analyse übernimmt Szenarioauswahl und echte Quelldetails',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState(
+        marketData: DemoMarketDataRepository(),
+        analysisGateway: RuleBasedAnalysisGateway(),
+        store: SharedPreferencesLocalStore());
+    await state.initialize();
+    await _pumpAppleAnalysis(tester, state);
+    final instrument = state.instrumentById('aapl')!;
+    final analysis = RuleBasedAnalysisGateway().analyze(instrument);
+    final scenario = chartScenarios(analysis).first;
+    final choice =
+        find.byKey(ValueKey('analysis-highlight-${scenario.kind.name}'));
+    await _revealLazyListChild(tester,
+        target: choice,
+        scrollable: _scrollableInside('analysis-content-list'),
+        dragOffset: const Offset(0, -200));
+    await tester.tap(choice);
+    await tester.pumpAndSettle();
+    final details =
+        tester.widget<ScenarioDetails>(find.byType(ScenarioDetails));
+    expect(details.isDemo, isFalse);
+    expect(details.instrument.historyEuro, instrument.historyEuro);
+    expect(details.scenario.id, scenario.id);
+    expect(state.history, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Analyse wechselt zwischen Elliott-Wellen und Price Action',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
@@ -32,7 +63,7 @@ void main() {
             .widget<ElliottScenarioChart>(find.byType(ElliottScenarioChart))
             .visibleScenarioIds
             .length,
-        3);
+        2);
     expect(tester.takeException(), isNull);
   });
 
@@ -54,7 +85,7 @@ void main() {
         tester.widget<ElliottScenarioChart>(find.byType(ElliottScenarioChart));
     expect(chart.instrument.historyEuro,
         state.instrumentById('aapl')!.historyEuro);
-    expect(chart.visibleScenarioIds.length, 3);
+    expect(chart.visibleScenarioIds.length, 2);
     expect(find.text('Kompakt'), findsNothing);
     expect(find.text('Standard'), findsNothing);
     expect(find.text('Experte'), findsNothing);

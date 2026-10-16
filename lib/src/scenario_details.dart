@@ -4,18 +4,30 @@ import 'app.dart';
 import 'chart.dart';
 import 'models.dart';
 
-/// Explanations for the selected synthetic scenario in the test area.
+List<AnalysisScenario> chartScenarios(AnalysisResult analysis) {
+  final ranked = [...analysis.scenarios]..sort((a, b) {
+      if (a.id == b.id) return 0;
+      if (a.id == analysis.primaryScenarioId) return -1;
+      if (b.id == analysis.primaryScenarioId) return 1;
+      return b.probability.compareTo(a.probability);
+    });
+  return ranked.take(2).toList();
+}
+
+/// Explains model values using the selected instrument's actual data source.
 class ScenarioDetails extends StatelessWidget {
   const ScenarioDetails(
       {required this.instrument,
       required this.scenario,
       required this.zonesVisible,
       required this.onClear,
+      this.isDemo = false,
       super.key});
   final Instrument instrument;
   final AnalysisScenario scenario;
   final bool zonesVisible;
   final VoidCallback onClear;
+  final bool isDemo;
 
   @override
   Widget build(BuildContext context) {
@@ -96,8 +108,9 @@ class ScenarioDetails extends StatelessWidget {
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                          'Synthetische Demodaten – keine aktuellen Börsenkurse.'),
+                      Text(isDemo
+                          ? 'Synthetische Demodaten – keine aktuellen Börsenkurse.'
+                          : 'Datenquelle: ${instrument.dataSource} · Datenstand: ${instrument.dataTimestamp.toLocal()}'),
                       SelectableText(
                           '${instrument.name} · ${instrument.timeframe.label}\n'
                           'Referenzkurs: ${money(instrument.euroPrice)}\n'

@@ -10,6 +10,8 @@ import 'knowledge_data.dart';
 import 'models.dart';
 import 'test_screen.dart';
 import 'price_action.dart';
+import 'scenario_details.dart';
+import 'scenario_focus_chart.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -680,7 +682,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     }
     _analysis = AppScope.of(context).analyze(_instrument);
     _visibleScenarioIds =
-        _analysis!.scenarios.map((scenario) => scenario.id).toSet();
+        chartScenarios(_analysis!).map((scenario) => scenario.id).toSet();
   }
 
   Future<void> _loadTimeframe(ChartTimeframe timeframe) async {
@@ -787,8 +789,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   Set<String> _retainedVisibleIds(AnalysisResult analysis) {
-    final available = analysis.scenarios.map((scenario) => scenario.id).toSet();
-    return _visibleScenarioIds.where(available.contains).toSet();
+    final available =
+        chartScenarios(analysis).map((scenario) => scenario.id).toSet();
+    final previous = chartScenarios(_analysis!).map((s) => s.id).toSet();
+    return available
+        .where(
+            (id) => !previous.contains(id) || _visibleScenarioIds.contains(id))
+        .toSet();
   }
 
   @override
@@ -943,7 +950,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             else ...[
               Stack(
                 children: [
-                  ElliottScenarioChart(
+                  ScenarioFocusChart(
                     instrument: instrument,
                     analysis: analysis,
                     visibleScenarioIds: _visibleScenarioIds,
@@ -963,7 +970,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: analysis.scenarios.map((scenario) {
+                children: chartScenarios(analysis).map((scenario) {
                   final selected = _visibleScenarioIds.contains(scenario.id);
                   final color = scenarioColor(scenario.kind);
                   return FilterChip(
@@ -1076,7 +1083,7 @@ class SnapshotScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final snapshotInstrument = snapshot.instrumentSnapshot ?? instrument;
     final visibleIds =
-        snapshot.scenarios.map((scenario) => scenario.id).toSet();
+        chartScenarios(snapshot).map((scenario) => scenario.id).toSet();
     return Scaffold(
       appBar: AppBar(title: const Text('Analyse-Snapshot')),
       body: ListView(
@@ -1095,7 +1102,7 @@ class SnapshotScreen extends StatelessWidget {
             style: const TextStyle(color: AppPalette.muted),
           ),
           const SizedBox(height: 20),
-          ElliottScenarioChart(
+          ScenarioFocusChart(
             instrument: snapshotInstrument,
             analysis: snapshot,
             visibleScenarioIds: visibleIds,

@@ -107,7 +107,8 @@ void main() {
     await finger
         .moveTo(rect.topLeft + Offset(14 + (rect.width - 28) * 0.9, 150));
     await tester.pump();
-    expect(find.text('Projektion – kein historischer Kurs'), findsOneWidget);
+    expect(find.textContaining('Projektion ·'), findsOneWidget);
+    expect(find.textContaining('kein historischer Kurs'), findsOneWidget);
     await finger.up();
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.takeException(), isNull);

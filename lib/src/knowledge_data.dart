@@ -41,6 +41,102 @@ String _normalizeKnowledgeText(String value) {
 
 const knowledgeEntries = <KnowledgeEntry>[
   KnowledgeEntry(
+    id: 'pa-basics',
+    category: 'Price Action',
+    title: 'Price Action: Kurse und Struktur lesen',
+    text:
+        'Price Action beschreibt die Entwicklung des Preises: Trend, Spannen und Reaktionen an markanten Bereichen. Kerzen zeigen, was innerhalb eines Intervalls geschah. Die Deutung braucht Kontext; ein Muster garantiert keine Fortsetzung.',
+    keywords: ['Kursbewegung', 'Marktstruktur', 'Candlestick'],
+  ),
+  KnowledgeEntry(
+    id: 'pa-ohlc',
+    category: 'Price Action',
+    title: 'OHLC: Wie eine Kerze entsteht',
+    text:
+        'Open ist der erste, High der höchste, Low der niedrigste und Close der letzte gemeldete Kurs im Intervall. Beispiel: O 100, H 105, T 98, S 103. Diese vier Werte bilden eine Kerze; Schlusskurse allein reichen dafür nicht.',
+    keywords: ['Eröffnung', 'Hoch', 'Tief', 'Schluss', 'Kerzenaufbau'],
+  ),
+  KnowledgeEntry(
+    id: 'pa-body-wicks',
+    category: 'Price Action',
+    title: 'Kerzenkörper, Dochte und Farben',
+    text:
+        'Der Körper reicht von Eröffnung bis Schluss. Die Dochte verbinden ihn mit Hoch und Tief. In dieser App ist Schluss über oder gleich Eröffnung grün, darunter rot. Die Farbe vergleicht nicht mit dem Vortag.',
+    keywords: ['Schatten', 'Wick', 'Body', 'grüne Kerze', 'rote Kerze'],
+  ),
+  KnowledgeEntry(
+    id: 'pa-interval',
+    category: 'Price Action',
+    title: 'Kerzenintervall und laufende Kerze',
+    text:
+        'Der Zeitraum umfasst die ganze Ansicht; das Intervall bestimmt eine einzelne Kerze. Eine 5-Minuten-Kerze fasst fünf Minuten zusammen. Solange das Intervall läuft, können Hoch, Tief und letzter Preis wechseln. Eine noch offene Kerze ist nicht endgültig.',
+    keywords: ['5m', '30m', '1d', '1wk', '1mo', 'Zeiteinheit'],
+  ),
+  KnowledgeEntry(
+    id: 'pa-doji',
+    category: 'Price Action',
+    title: 'Doji und kleine Kerzenkörper',
+    text:
+        'Bei einem Doji liegen Eröffnung und Schluss nahe beieinander. Das ist allein kein Umkehrsignal. Die App beschreibt einen Körper bis zu 10 % der Hoch-Tief-Spanne als Doji-ähnlich; diese Schwelle ist eine vereinfachte Modellregel.',
+    keywords: ['Unentschlossenheit', 'Spinning Top'],
+  ),
+  KnowledgeEntry(
+    id: 'pa-wick',
+    category: 'Price Action',
+    title: 'Lange Dochte, Hammer und Shooting Star',
+    text:
+        'Ein langer unterer Docht zeigt Erholung vom Intervalltief, ein langer oberer Docht Rückgang vom Hoch. Bezeichnungen wie Hammer oder Shooting Star hängen zusätzlich vom vorherigen Trend ab. Die App benennt daher zunächst nur die beobachtete Dochtform.',
+    keywords: ['Pin Bar', 'Ablehnung', 'Rejection'],
+  ),
+  KnowledgeEntry(
+    id: 'pa-engulfing',
+    category: 'Price Action',
+    title: 'Engulfing: umschließender Kerzenkörper',
+    text:
+        'Der Körper der zweiten Kerze umschließt den ersten. Bullisch: auf einen fallenden folgt ein größerer steigender Körper; bärisch umgekehrt. Dochte müssen nicht eingeschlossen sein. Dieses Wissensbeispiel wird derzeit nicht automatisch als Signal erkannt.',
+    keywords: ['Bullish Engulfing', 'Bearish Engulfing', 'Verschlingung'],
+  ),
+  KnowledgeEntry(
+    id: 'pa-support-resistance',
+    category: 'Price Action',
+    title: 'Unterstützung und Widerstand',
+    text:
+        'Unterstützung bezeichnet einen Bereich früherer Stabilisierung, Widerstand einen Bereich früherer Begrenzung von Anstiegen. Es sind Zonen statt garantierter Grenzen. Nach einem Durchbruch kann ein früherer Widerstand zur Unterstützung werden und umgekehrt.',
+    keywords: ['Support', 'Resistance', 'Kurszone'],
+  ),
+  KnowledgeEntry(
+    id: 'pa-structure',
+    category: 'Price Action',
+    title: 'Trendstruktur und Seitwärtsspanne',
+    text:
+        'Höhere Hochs und höhere Tiefs beschreiben eine aufwärts gerichtete Struktur, tiefere Hochs und Tiefs eine abwärts gerichtete. In einer Range pendelt der Kurs zwischen Bereichen. Die Einordnung kann je Zeitrahmen unterschiedlich ausfallen.',
+    keywords: ['Higher High', 'Higher Low', 'Lower High', 'Lower Low', 'Range'],
+  ),
+  KnowledgeEntry(
+    id: 'pa-breakout',
+    category: 'Price Action',
+    title: 'Ausbruch, Rücktest und Fehlausbruch',
+    text:
+        'Ein Ausbruch verlässt eine bisherige Spanne. Ein Rücktest kehrt an deren Grenze zurück. Fällt der Kurs wieder in die Spanne, kann ein Fehlausbruch vorliegen. Ein kurzer Docht über einer Grenze belegt noch keinen anhaltenden Ausbruch.',
+    keywords: ['Breakout', 'Retest', 'Fakeout', 'False Break'],
+  ),
+  KnowledgeEntry(
+    id: 'pa-context',
+    category: 'Price Action',
+    title: 'Bestätigung, Volumen und Grenzen',
+    text:
+        'Folgekerzen, Trend und nahe Kurszonen helfen bei der Einordnung. Volumen kann ergänzen, ist aber abhängig von Quelle und Handelsplatz. Die aktuelle Price-Action-Ansicht wertet kein Volumen aus und erzeugt keine automatischen Kauf- oder Verkaufsorders.',
+    keywords: ['Kontext', 'Confirmation', 'Handelsvolumen'],
+  ),
+  KnowledgeEntry(
+    id: 'pa-projection',
+    category: 'Price Action',
+    title: 'Historischer Preis oder Modellprojektion?',
+    text:
+        'Historische Ablesewerte stammen aus dem Datenverlauf und sind zwischen Punkten als interpoliert gekennzeichnet. Projektionspreise werden aus Szenariopunkten berechnet. Modellschritte sind keine zukünftigen Handelstermine; Projektionen sind keine gemessenen Kurse.',
+    keywords: ['Preisabfrage', 'Fadenkreuz', 'Modellpreis', 'Zukunft'],
+  ),
+  KnowledgeEntry(
     id: 'elliott-prinzip',
     category: 'Grundlagen',
     title: 'Elliott-Wellen-Prinzip',

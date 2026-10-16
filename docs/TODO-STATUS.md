@@ -24,6 +24,10 @@ In regulärer Analyse und Testbereich umgesetzt; Geräteabnahme steht aus.
   aufhebbare Hervorhebung und Detailansicht mit Kurswerten und Erklärungen.
 - Detailansicht zeigt verwendete Demoreihe, Zeitraum, jüngste Spanne,
   Zählmethode, Regelprüfungen und Bewertungsfaktoren. Android-Abnahme ausstehend.
+- Diese Funktionen sind jetzt auch in regulärer Analyse und gespeicherten Analysen
+  verfügbar; dort mit den jeweiligen Kursdaten und Quellen statt synthetischer Testreihen.
+- Projektionspreisabfrage per Finger mit Szenarioname, interpoliertem Modellwert
+  und Modellschritt. Das Modell liefert keine zukünftigen Handelstermine.
 
 - Separater Test-Tab mit eigenen, sichtbar gekennzeichneten Demodaten.
 - Demo-Wertpapierauswahl, sieben Zeiträume, Szenarien einzeln schaltbar und Zonen ein-/ausblendbar.
@@ -36,7 +40,8 @@ In regulärer Analyse und Testbereich umgesetzt; Geräteabnahme steht aus.
   werden beim Zeichnen übersprungen. Regressionstest für Richtungswechsel ergänzt.
 - Rahmenlose Darstellung ohne Kartenhintergrund im Test-Tab ergänzt.
 - Gemeinsamer Chart in regulärer Analyse und Historie übernommen: Zoom, Verschieben, interpolierte Kursabfrage, freie Darstellung ohne linke Euro-Achse.
-- Testbereich auf Hauptszenario und stärkste Alternative begrenzt; reguläre Analyse behält alle drei Szenarien.
+- Charts in Testbereich, regulärer Analyse und Historie auf Hauptszenario und stärkste
+  Alternative begrenzt; Modellbewertung und Erläuterungen enthalten weiter drei Szenarien.
 - Datenabruf und gespeicherte Snapshots bleiben an ihre bisherigen Quellen angebunden; Demoreihen bleiben im Testbereich.
 - Vollständiger Abgleich: [Repository-Prüfung](REPOSITORY-ABGLEICH-EV018-EV019.md).
 
@@ -77,6 +82,8 @@ In regulärer Analyse und Testbereich umgesetzt; Geräteabnahme steht aus.
 - Favoriten direkt analysierbar
 - dokumentierte Quellen, Endpunkte, Intervalle, FX-, Split- und Fallback-Logik
 - durchsuchbare Wissensdatenbank mit mindestens 35 Begriffen
+- zwölf zusätzliche Price-Action-Begriffe; Grundlagen, Kerzenformen, Marktstruktur,
+  Zonen, Ausbrüche und Modellgrenzen (Quellen: PRICE-ACTION-WISSEN.md)
 - durchgängiger Dark Mode, minimalistisches Finanz-App-Design und Farbscore
 - getrennte Analyseansichten für Elliott-Wellen und Price Action
 

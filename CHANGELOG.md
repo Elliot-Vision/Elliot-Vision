@@ -1,5 +1,9 @@
 # Unveröffentlicht – EV-018 / EV-019
 
+- Wissensdatenbank um zwölf Price-Action-Begriffe erweitert: OHLC, Kerzenaufbau, Doji, Dochte, Engulfing, Intervalle, Struktur, Zonen, Ausbruch/Rücktest und Grenzen der Interpretation.
+- Szenarioauswahl und hervorgehobene Ein-/Ausstiegszonen samt Herleitung aus dem Testbereich in reguläre und gespeicherte Analysen übernommen. Charts zeigen Hauptszenario und stärkste Alternative; alle drei Szenarien bleiben Teil der Modellbewertung.
+- Einfinger-Abfrage interpolierter Projektionspreise mit Fadenkreuz, Szenarioname und Modellschritt ergänzt. Die Anzeige enthält ausdrücklich keine erfundenen zukünftigen Handelstermine. Testdaten bleiben im Testbereich.
+
 - Depot: Eingabe-Controller und Such-Timer gehören jetzt zum Zustand des Positionsdialogs. Sie werden erst beim Entfernen des Dialogs freigegeben, damit Speichern und Schließen während der Animation keine Zugriffe auf bereits freigegebene Controller auslösen. Zwei Regressionstests reproduzieren und prüfen diese Abläufe einschließlich erneutem Öffnen.
 
 - Testbereich: Projektion und Zonen per Antippen auswählbar; aktive Linie und Einstiegs-/Ausstiegsbereiche hervorgehoben. Zugeordnete Kurswerte, Stop-Loss, Invalidierung und verwendete Daten mit Herleitung ergänzt. Alternativauswahl über beschriftete Schalter; Zoom und reguläre Analyse bleiben verfügbar.

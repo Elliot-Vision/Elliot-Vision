@@ -9,6 +9,16 @@ import 'candle_chart_painter.dart';
 
 const _chartSideInset = 14.0;
 
+/// Interpolates exactly the vertices drawn by the scenario painter.
+double projectionPrice(
+    AnalysisScenario scenario, double current, double fraction) {
+  final prices = [current, ...scenario.projectionEuro];
+  final index = fraction.clamp(0.0, 1.0) * (prices.length - 1);
+  final low = index.floor();
+  final high = math.min(low + 1, prices.length - 1);
+  return prices[low] + (prices[high] - prices[low]) * (index - low);
+}
+
 Color scenarioColor(ScenarioKind kind) {
   switch (kind) {
     case ScenarioKind.bullish:
@@ -77,6 +87,16 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
   bool _restored = false;
   double? _selectedIndex;
   bool _selectedProjection = false;
+  double? _projectionFraction;
+  String? _projectionScenarioId;
+  AnalysisScenario? get _inspectedScenario {
+    final id = widget.highlightedScenarioId ?? _projectionScenarioId;
+    for (final s in widget.analysis.scenarios) {
+      if (s.id == id && widget.visibleScenarioIds.contains(id)) return s;
+    }
+    return null;
+  }
+
   List<PricePoint> _points() => widget.candleMode
       ? widget.instrument.candlesEuro
           .map((c) => PricePoint(timestamp: c.timestamp, euro: c.close))
@@ -93,15 +113,24 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
         viewport: _viewport,
         selectedIndex: _selectedIndex,
         highlightedScenarioId: widget.highlightedScenarioId,
+        projectionFraction: _selectedProjection ? _projectionFraction : null,
+        projectionValue: _selectedProjection &&
+                _projectionFraction != null &&
+                _inspectedScenario != null
+            ? projectionPrice(_inspectedScenario!, widget.instrument.euroPrice,
+                _projectionFraction!)
+            : null,
       );
 
   void _selectProjection(Offset position, Size size) {
-    if (widget.onScenarioSelected == null || widget.candleMode) return;
-    widget.onScenarioSelected!(
-        _scenarioPainter(widget.visibleScenarioIds).scenarioAt(position, size));
+    if (widget.candleMode) return;
+    final id =
+        _scenarioPainter(widget.visibleScenarioIds).scenarioAt(position, size);
+    widget.onScenarioSelected?.call(id);
+    _inspect(position, size.width, scenarioId: id);
   }
 
-  void _inspect(Offset position, double width) {
+  void _inspect(Offset position, double width, {String? scenarioId}) {
     final fraction =
         _viewport.start + _focalFraction(position, width) * _viewport.span;
     final points = _inspectionPoints;
@@ -109,6 +138,21 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
     setState(() {
       final historyFraction = widget.candleMode ? 1.0 : 0.64;
       _selectedProjection = fraction > historyFraction;
+      _projectionFraction = _selectedProjection
+          ? ((fraction - 0.64) / 0.36).clamp(0.0, 1.0)
+          : null;
+      if (_selectedProjection) {
+        final candidates = widget.analysis.scenarios
+            .where((s) => widget.visibleScenarioIds.contains(s.id))
+            .toList();
+        final preferred =
+            scenarioId ?? widget.highlightedScenarioId ?? _projectionScenarioId;
+        _projectionScenarioId = candidates.any((s) => s.id == preferred)
+            ? preferred
+            : candidates.any((s) => s.id == widget.analysis.primaryScenarioId)
+                ? widget.analysis.primaryScenarioId
+                : candidates.firstOrNull?.id;
+      }
       _selectedIndex = _selectedProjection || start >= points.length
           ? null
           : start +
@@ -118,7 +162,17 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
   }
 
   String get _inspectionLabel {
-    if (_selectedProjection) return 'Projektion – kein historischer Kurs';
+    if (_selectedProjection) {
+      final scenario = _inspectedScenario;
+      if (scenario == null || _projectionFraction == null) {
+        return 'Keine sichtbare Projektion ausgewählt';
+      }
+      final price = projectionPrice(
+          scenario, widget.instrument.euroPrice, _projectionFraction!);
+      return 'Projektion · ${scenario.kind.label}: ≈ ${price.toStringAsFixed(2).replaceAll('.', ',')} €\n'
+          'Modellschritt ${(_projectionFraction! * scenario.projectionEuro.length).toStringAsFixed(1)}'
+          '/${scenario.projectionEuro.length} · kein historischer Kurs';
+    }
     if (_selectedIndex == null) return 'Mit einem Finger einen Kurs auswählen';
     final points = _inspectionPoints;
     if (widget.candleMode) {
@@ -175,6 +229,14 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
       _inspectionPoints = _points();
       _selectedIndex = null;
       _selectedProjection = false;
+      _projectionFraction = null;
+      _projectionScenarioId = null;
+    }
+    if (_projectionScenarioId != null &&
+        !widget.visibleScenarioIds.contains(_projectionScenarioId)) {
+      _projectionScenarioId = null;
+      _projectionFraction = null;
+      _selectedProjection = false;
     }
     if (oldWidget.instrument.id != widget.instrument.id ||
         oldWidget.instrument.selectedSymbol !=
@@ -184,6 +246,7 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
       _viewport = const ChartViewport();
       _selectedIndex = null;
       _selectedProjection = false;
+      _projectionFraction = null;
       PageStorage.maybeOf(context)?.writeState(
         context,
         _viewport,
@@ -236,7 +299,7 @@ class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
             child: LayoutBuilder(
               builder: (context, constraints) => GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTapUp: widget.onScenarioSelected == null
+                onTapUp: widget.candleMode
                     ? null
                     : (details) => _selectProjection(
                         details.localPosition, Size(constraints.maxWidth, 350)),
@@ -383,6 +446,8 @@ class _ChartPainter extends CustomPainter {
     required this.viewport,
     this.selectedIndex,
     this.highlightedScenarioId,
+    this.projectionFraction,
+    this.projectionValue,
   });
 
   final Instrument instrument;
@@ -393,6 +458,8 @@ class _ChartPainter extends CustomPainter {
   final ChartViewport viewport;
   final double? selectedIndex;
   final String? highlightedScenarioId;
+  final double? projectionFraction;
+  final double? projectionValue;
 
   /// Uses the same plot limits and price range as paint, after zoom/pan.
   String? scenarioAt(Offset position, Size size) {
@@ -743,6 +810,16 @@ class _ChartPainter extends CustomPainter {
         canvas.drawCircle(Offset(x, y), 5, Paint()..color = AppPalette.blue);
       }
     }
+    if (projectionFraction != null && projectionValue != null) {
+      final x = xFor(0.64 + 0.36 * projectionFraction!);
+      final y = yFor(projectionValue!);
+      final marker = Paint()
+        ..color = AppPalette.ink
+        ..strokeWidth = 1;
+      canvas.drawLine(Offset(x, top), Offset(x, top + plotHeight), marker);
+      canvas.drawLine(Offset(left, y), Offset(plotRight, y), marker);
+      canvas.drawCircle(Offset(x, y), 5, Paint()..color = AppPalette.blue);
+    }
     canvas.restore();
     _drawXAxis(canvas, history, left, originalHistoryEnd, plotRight,
         top + plotHeight + 9);
@@ -1013,7 +1090,9 @@ class _ChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ChartPainter oldDelegate) {
-    return oldDelegate.highlightedScenarioId != highlightedScenarioId ||
+    return oldDelegate.projectionFraction != projectionFraction ||
+        oldDelegate.projectionValue != projectionValue ||
+        oldDelegate.highlightedScenarioId != highlightedScenarioId ||
         oldDelegate.selectedIndex != selectedIndex ||
         oldDelegate.viewport.start != viewport.start ||
         oldDelegate.viewport.end != viewport.end ||
