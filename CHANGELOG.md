@@ -1,5 +1,6 @@
 # Unveröffentlicht – EV-018 / EV-019
 
+- Testbereich mit Reitern „Elliott-Wellen“ und „Price Action“; Price Action als vorbereiteter Bereich ohne vorgetäuschte Analyse. Auswahl und Filter bleiben beim Wechsel erhalten.
 - Gemeinsamer interaktiver Chart für reguläre Analyse, gespeicherte Analysen und Test-Tab; doppelte Painter-Implementierung entfernt.
 - Test-Tab zeigt maximal zwei Projektionen: Hauptszenario und stärkste Alternative. Reguläre Analyse behält ihre drei Szenariofilter.
 - Linke Euro-Achsenbeschriftung im Test-Chart entfernt; Kursverlauf erhält 44 Pixel mehr Breite. Preisabfrage und Zoom verwenden dieselben neuen Plot-Grenzen.

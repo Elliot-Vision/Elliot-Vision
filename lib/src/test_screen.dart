@@ -25,6 +25,7 @@ class _TestScreenState extends State<TestScreen> {
   );
   final _visibleKinds = ScenarioKind.values.toSet();
   bool _showZones = true;
+  bool _priceAction = false;
 
   List<AnalysisScenario> get _testScenarios {
     final ranked = List<AnalysisScenario>.of(_analysis.scenarios)
@@ -63,6 +64,18 @@ class _TestScreenState extends State<TestScreen> {
             'Depot, Favoriten und Analysehistorie werden nicht verändert.',
           ),
           const SizedBox(height: 20),
+          SegmentedButton<bool>(
+            key: const ValueKey('test-analysis-tabs'),
+            showSelectedIcon: false,
+            segments: const [
+              ButtonSegment(value: false, label: Text('Elliott-Wellen')),
+              ButtonSegment(value: true, label: Text('Price Action')),
+            ],
+            selected: {_priceAction},
+            onSelectionChanged: (selection) =>
+                setState(() => _priceAction = selection.single),
+          ),
+          const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             key: const ValueKey('test-instrument'),
             initialValue: _instrument.id,
@@ -94,46 +107,75 @@ class _TestScreenState extends State<TestScreen> {
             },
           ),
           const SizedBox(height: 12),
-          ExperimentalScenarioChart(
-            instrument: _instrument,
-            analysis: _analysis,
-            visibleScenarioIds: _testScenarios
-                .where((s) => _visibleKinds.contains(s.kind))
-                .map((s) => s.id)
-                .toSet(),
-            historyPoints: _instrument.pricePoints.length,
-            showZones: _showZones,
-          ),
-          const SizedBox(height: 16),
-          Text('Szenarien', style: Theme.of(context).textTheme.titleMedium),
-          const Text('Hauptszenario und stärkste Alternative'),
-          Wrap(
-            spacing: 8,
-            children: _testScenarios
-                .map((scenario) => scenario.kind)
-                .map((kind) => FilterChip(
-                      key: ValueKey('test-scenario-${kind.name}'),
-                      label: Text(kind.label),
-                      selected: _visibleKinds.contains(kind),
-                      onSelected: (selected) => setState(() {
-                        selected
-                            ? _visibleKinds.add(kind)
-                            : _visibleKinds.remove(kind);
-                      }),
-                    ))
-                .toList(),
-          ),
-          if (_visibleKinds.isEmpty)
-            const Text(
-                'Alle Szenarien ausgeblendet – nur der Kursverlauf ist sichtbar.'),
-          SwitchListTile.adaptive(
-            key: const ValueKey('test-zones'),
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Zonen anzeigen'),
-            subtitle: const Text('Einstieg, Ausstieg und Stop-Loss'),
-            value: _showZones,
-            onChanged: (value) => setState(() => _showZones = value),
-          ),
+          if (_priceAction)
+            Card(
+              key: const ValueKey('test-price-action-preview'),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Price Action',
+                        style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 8),
+                    const Text('In Vorbereitung'),
+                    const SizedBox(height: 12),
+                    Text(
+                        '${_instrument.name} · ${_instrument.timeframe.label} · Demodaten'),
+                    const SizedBox(height: 12),
+                    const Text(
+                        'Hier werden später Kerzenchart und Price-Action-Funktionen getestet. '
+                        'Dazu kommen Erklärungen zu Eröffnung, Hoch, Tief und Schluss, '
+                        'Kerzenkörpern, Dochten und noch laufenden Kerzen.'),
+                    const SizedBox(height: 8),
+                    const Text(
+                        'Kerzenchart und Price-Action-Berechnung sind noch nicht implementiert.'),
+                  ],
+                ),
+              ),
+            )
+          else ...[
+            ExperimentalScenarioChart(
+              instrument: _instrument,
+              analysis: _analysis,
+              visibleScenarioIds: _testScenarios
+                  .where((s) => _visibleKinds.contains(s.kind))
+                  .map((s) => s.id)
+                  .toSet(),
+              historyPoints: _instrument.pricePoints.length,
+              showZones: _showZones,
+            ),
+            const SizedBox(height: 16),
+            Text('Szenarien', style: Theme.of(context).textTheme.titleMedium),
+            const Text('Hauptszenario und stärkste Alternative'),
+            Wrap(
+              spacing: 8,
+              children: _testScenarios
+                  .map((scenario) => scenario.kind)
+                  .map((kind) => FilterChip(
+                        key: ValueKey('test-scenario-${kind.name}'),
+                        label: Text(kind.label),
+                        selected: _visibleKinds.contains(kind),
+                        onSelected: (selected) => setState(() {
+                          selected
+                              ? _visibleKinds.add(kind)
+                              : _visibleKinds.remove(kind);
+                        }),
+                      ))
+                  .toList(),
+            ),
+            if (_visibleKinds.isEmpty)
+              const Text(
+                  'Alle Szenarien ausgeblendet – nur der Kursverlauf ist sichtbar.'),
+            SwitchListTile.adaptive(
+              key: const ValueKey('test-zones'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Zonen anzeigen'),
+              subtitle: const Text('Einstieg, Ausstieg und Stop-Loss'),
+              value: _showZones,
+              onChanged: (value) => setState(() => _showZones = value),
+            ),
+          ],
         ],
       ),
     );

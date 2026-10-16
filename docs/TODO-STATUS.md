@@ -4,7 +4,14 @@ Stand: Version 0.4.1+7
 
 ## Offen: Analyse-Reiter für Elliott-Wellen und Price Action
 
-Aufgenommen am 16. Oktober 2026; geplant, noch nicht implementiert.
+Aufgenommen am 16. Oktober 2026; teilweise vorbereitet.
+
+- Im Testbereich umgesetzt: Umschaltbare Reiter „Elliott-Wellen“ und
+  „Price Action“. Elliott-Wellen zeigt den bestehenden Chart; Price Action
+  ist als Vorbereitungsbereich gekennzeichnet. Demo-Auswahl, Zeitraum und
+  Filtereinstellungen bleiben beim Wechsel erhalten.
+- Noch offen: Umstellung der regulären Analyse-Reiter sowie Kerzenchart,
+  Price-Action-Berechnung und vollständige Kerzenerklärungen.
 
 - Die bisherigen Reiter „Kompakt“, „Standard“ und „Experte“ entfernen und
   durch „Elliott-Wellen“ und „Price Action“ ersetzen.

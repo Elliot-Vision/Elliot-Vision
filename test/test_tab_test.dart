@@ -6,6 +6,43 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('Test-Reiter wechseln und erhalten Demo-Auswahl und Filter',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester
+        .pumpWidget(const MaterialApp(home: Scaffold(body: TestScreen())));
+    final zones = find.byKey(const ValueKey('test-zones'));
+    await tester.scrollUntilVisible(zones, 150);
+    await tester.pumpAndSettle();
+    await tester.tap(zones);
+    await tester.pumpAndSettle();
+    final tabs = find.byKey(const ValueKey('test-analysis-tabs'));
+    await tester.scrollUntilVisible(tabs, -150);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Price Action'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('test-price-action-preview')),
+        findsOneWidget);
+    expect(find.byType(ExperimentalScenarioChart), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('test-timeframe')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1 Tag').last);
+    await tester.pumpAndSettle();
+    expect(
+        find.textContaining('Apple Inc. · 1 Tag · Demodaten'), findsOneWidget);
+    await tester.tap(find.text('Elliott-Wellen'));
+    await tester.pumpAndSettle();
+    final chart = tester.widget<ExperimentalScenarioChart>(
+        find.byType(ExperimentalScenarioChart));
+    expect(chart.instrument.timeframe, ChartTimeframe.oneDay);
+    expect(chart.showZones, isFalse);
+    expect(chart.visibleScenarioIds.length, 2);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Test-Tab isoliert Demochart und erhält reguläre Navigation',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
