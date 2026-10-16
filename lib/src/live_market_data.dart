@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import 'demo_data.dart';
 import 'models.dart';
+import 'kraken_market_data.dart';
 
 class MarketDataException implements Exception {
   const MarketDataException(this.message);
@@ -105,6 +106,17 @@ class LiveMarketDataRepository implements MarketDataRepository {
       );
     }
     final isin = hasIsinShape ? normalizedIsin : null;
+    final krakenPair = KrakenMarketData.pairForQuery(normalized);
+    if (krakenPair != null) {
+      try {
+        final loaded = await KrakenMarketData(_client, _now)
+            .load(krakenPair, ChartTimeframe.maximum);
+        _instruments[loaded.id] = loaded;
+        return [loaded];
+      } on Object {
+        // Search may still succeed through the explicitly labelled Yahoo source.
+      }
+    }
 
     if (isin != null) {
       final candidates = await _mapIsinWithOpenFigi(isin);
@@ -466,6 +478,11 @@ class LiveMarketDataRepository implements MarketDataRepository {
     ChartTimeframe timeframe = ChartTimeframe.maximum,
     bool refreshFx = false,
   }) async {
+    if (candidate.symbol.startsWith('KRAKEN:')) {
+      return KrakenMarketData(_client, _now).load(
+          candidate.symbol.substring('KRAKEN:'.length), timeframe,
+          id: candidate.idOverride);
+    }
     final uri = Uri.https(
       'query1.finance.yahoo.com',
       '/v8/finance/chart/${candidate.symbol}',
@@ -503,36 +520,39 @@ class LiveMarketDataRepository implements MarketDataRepository {
     if (rawCloses.isEmpty) {
       throw MarketDataException('Keine Kurswerte fuer ${candidate.symbol}.');
     }
+    final points = _extractPricePoints(result, conversion: conversion);
+    if (points.isEmpty) {
+      throw MarketDataException(
+          'Keine datierten Kurswerte fuer ${candidate.symbol}.');
+    }
+    final rawTime = meta['regularMarketTime'];
+    final rawQuote = meta['regularMarketPrice'];
+    final hasQuoteTime = rawTime is num &&
+        rawTime.isFinite &&
+        rawTime > 0 &&
+        rawTime < 8640000000000 &&
+        rawQuote is num &&
+        rawQuote.isFinite &&
+        rawQuote > 0;
     final marketPrice =
-        (meta['regularMarketPrice'] as num?)?.toDouble() ?? rawCloses.last;
+        hasQuoteTime ? rawQuote.toDouble() : points.last.euro / conversion;
     if (!marketPrice.isFinite || marketPrice <= 0) {
       throw MarketDataException('Ungültiger Kurs fuer ${candidate.symbol}.');
     }
-    final timestampSeconds = (meta['regularMarketTime'] as num?)?.toInt();
-    final timestamp = timestampSeconds == null
-        ? DateTime.now().toUtc()
-        : DateTime.fromMillisecondsSinceEpoch(
-            timestampSeconds * 1000,
+    final timestamp = hasQuoteTime
+        ? DateTime.fromMillisecondsSinceEpoch(
+            rawTime.toInt() * 1000,
             isUtc: true,
-          );
-    final points = _extractPricePoints(
-      result,
-      conversion: conversion,
-    );
-    final history = points.isEmpty
-        ? rawCloses.map((value) => value * conversion).toList()
-        : points.map((point) => point.euro).toList();
-    final historyTimestamps = points.isEmpty
-        ? <DateTime>[]
-        : points.map((point) => point.timestamp).toList();
+          )
+        : points.last.timestamp;
+    final history = points.map((point) => point.euro).toList();
+    final historyTimestamps = points.map((point) => point.timestamp).toList();
     final extremes = _extractExtremes(result, conversion: conversion);
     final currentEuro = marketPrice * conversion;
-    if ((history.last - currentEuro).abs() > 0.000001) {
+    if (timestamp.isAfter(historyTimestamps.last)) {
       history.add(currentEuro);
-      if (historyTimestamps.isNotEmpty) {
-        historyTimestamps.add(timestamp);
-      }
-    } else {
+      historyTimestamps.add(timestamp);
+    } else if (timestamp == historyTimestamps.last) {
       history[history.length - 1] = currentEuro;
     }
     final venue = (meta['fullExchangeName'] as String?) ??
@@ -565,8 +585,10 @@ class LiveMarketDataRepository implements MarketDataRepository {
       candlesEuro: _extractCandles(result, conversion: conversion),
       assetType: candidate.assetType,
       timeframe: timeframe,
-      dataSource: 'Yahoo Finance / OpenFIGI',
-      dataDelay: _dataDelayText(meta, candidate.assetType),
+      dataSource: 'Yahoo Finance · $venue · ${candidate.symbol}',
+      dataDelay: hasQuoteTime
+          ? _dataDelayText(meta, candidate.assetType)
+          : 'Letzter gültiger Chartwert; aktueller Kurs oder Kurszeitpunkt fehlt beim Anbieter.',
       isLive: true,
     );
   }
@@ -588,6 +610,9 @@ class LiveMarketDataRepository implements MarketDataRepository {
     final candles = <PriceCandle>[];
     for (var i = 0; i < times.length; i++) {
       if (times[i] is! num ||
+          !(times[i] as num).isFinite ||
+          (times[i] as num) <= 0 ||
+          (times[i] as num) >= 8640000000000 ||
           columns.any(
               (column) => i >= (column as List).length || column[i] is! num)) {
         continue;
@@ -629,7 +654,8 @@ class LiveMarketDataRepository implements MarketDataRepository {
       timeframe: timeframe,
       refreshFx: refreshFx,
     );
-    if (timeframe == ChartTimeframe.maximum) {
+    if (timeframe == ChartTimeframe.maximum ||
+        candidate.symbol.startsWith('KRAKEN:')) {
       return selected;
     }
     final allTime = await _loadInstrument(candidate);
@@ -670,6 +696,9 @@ class LiveMarketDataRepository implements MarketDataRepository {
       if (rawTime is! num || rawValue is! num) {
         continue;
       }
+      if (!rawTime.isFinite || rawTime <= 0 || rawTime >= 8640000000000) {
+        continue;
+      }
       final value = rawValue.toDouble();
       if (!value.isFinite || value <= 0) {
         continue;
@@ -687,7 +716,9 @@ class LiveMarketDataRepository implements MarketDataRepository {
     if (points.isEmpty) {
       return const <PricePoint>[];
     }
-    return points;
+    final unique = {for (final point in points) point.timestamp: point};
+    return unique.values.toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
   }
 
   _Extremes _extractExtremes(
@@ -907,8 +938,7 @@ class LiveMarketDataRepository implements MarketDataRepository {
     if (seconds <= 0) {
       return 'Datenstand laut Anbieter; Echtzeitstatus nicht garantiert';
     }
-    final minutes = (seconds / 60).ceil();
-    return 'Laut Anbieter etwa $minutes Min. verzögert';
+    return 'Verzögert laut Anbieter; genaue Verzögerung nicht bestätigt. Kurszeitpunkt beachten.';
   }
 
   static List<_QuoteCandidate> _deduplicate(

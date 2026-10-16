@@ -178,6 +178,7 @@ class Instrument {
     this.timeframe = ChartTimeframe.maximum,
     this.dataSource = 'Lokaler Datenstand',
     this.dataDelay = 'Gespeicherter Kursstand',
+    this.dataInterval = '',
     this.isLive = false,
   });
 
@@ -205,6 +206,9 @@ class Instrument {
   final ChartTimeframe timeframe;
   final String dataSource;
   final String dataDelay;
+  final String dataInterval;
+  String get candleInterval =>
+      dataInterval.isEmpty ? timeframe.interval : dataInterval;
   final bool isLive;
 
   String get selectedSymbol => venueSymbols[defaultVenue] ?? ticker;
@@ -279,6 +283,7 @@ class Instrument {
     ChartTimeframe? timeframe,
     String? dataSource,
     String? dataDelay,
+    String? dataInterval,
     bool? isLive,
   }) =>
       Instrument(
@@ -303,6 +308,7 @@ class Instrument {
         timeframe: timeframe ?? this.timeframe,
         dataSource: dataSource ?? this.dataSource,
         dataDelay: dataDelay ?? this.dataDelay,
+        dataInterval: dataInterval ?? this.dataInterval,
         isLive: isLive ?? this.isLive,
       );
 
@@ -329,6 +335,7 @@ class Instrument {
         'timeframe': timeframe.name,
         'dataSource': dataSource,
         'dataDelay': dataDelay,
+        'dataInterval': dataInterval,
         'isLive': isLive,
       };
 
@@ -375,6 +382,7 @@ class Instrument {
       ),
       dataSource: (json['dataSource'] as String?) ?? 'Gespeicherter Datenstand',
       dataDelay: (json['dataDelay'] as String?) ?? 'Gespeicherter Kursstand',
+      dataInterval: (json['dataInterval'] as String?) ?? '',
       isLive: (json['isLive'] as bool?) ?? false,
     );
   }

@@ -36,7 +36,7 @@ class PriceActionPanel extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Price Action', style: Theme.of(context).textTheme.titleLarge),
       Text(
-          'Kerzenintervall: ${instrument.timeframe.interval} · ${instrument.isLive ? instrument.dataSource : 'Demodaten / gespeicherter Datenstand'}'),
+          'Kerzenintervall: ${instrument.candleInterval} · ${instrument.isLive ? instrument.dataSource : 'Demodaten / gespeicherter Datenstand'}'),
       const SizedBox(height: 12),
       if (candles.isEmpty)
         const Text('Für diesen Datenstand fehlen vollständige OHLC-Kerzen. '

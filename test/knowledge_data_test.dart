@@ -2,6 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:elliott_vision/elliott_vision.dart';
 
 void main() {
+  test('Alle Wissenseinträge enthalten Erklärung, Beispiel und Grenzen', () {
+    for (final entry in knowledgeEntries) {
+      expect(entry.explanation.length, greaterThan(100), reason: entry.id);
+      expect(entry.example.length, greaterThan(60), reason: entry.id);
+      expect(entry.limitation.length, greaterThan(60), reason: entry.id);
+    }
+    expect(filterKnowledgeEntries('Verlustbudget').map((e) => e.id),
+        contains('position-sizing'));
+  });
+
   test('Price Action ist vollständig suchbar und besitzt eindeutige Einträge',
       () {
     final entries = filterKnowledgeEntries('Price Action');

@@ -6,6 +6,31 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  test('Fehlender Kurszeitpunkt verwendet datierten Chartwert statt Abrufzeit',
+      () async {
+    final source = DemoMarketDataRepository().byId('aapl');
+    final payload = _chartResponse(
+        currency: 'EUR',
+        venue: 'Nasdaq',
+        marketPrice: 999,
+        closes: [80, 90, 100],
+        highs: [85, 95, 110],
+        lows: [70, 75, 90]);
+    final result = ((payload['chart'] as Map)['result'] as List).first as Map;
+    (result['meta'] as Map).remove('regularMarketTime');
+    final repository = LiveMarketDataRepository(
+        client:
+            MockClient((_) async => http.Response(jsonEncode(payload), 200)),
+        now: () => DateTime.utc(2040));
+    final loaded = await repository.loadSeries(source, ChartTimeframe.maximum);
+    expect(loaded.euroPrice, 100);
+    expect(loaded.dataTimestamp,
+        DateTime.fromMillisecondsSinceEpoch(1785756000 * 1000, isUtc: true));
+    expect(loaded.dataDelay, contains('Kurszeitpunkt fehlt'));
+    expect(loaded.dataSource, contains('Yahoo Finance'));
+    expect(loaded.dataSource, isNot(contains('OpenFIGI')));
+  });
+
   test(
       'ISIN wird exakt gemappt, in Euro umgerechnet und nach Hoch/Tief bewertet',
       () async {

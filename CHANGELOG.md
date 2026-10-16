@@ -1,5 +1,10 @@
 # Unveröffentlicht – EV-018 / EV-019
 
+- Wissensdatenbank als aufklappbare Überschriftenliste: alle 47 Einträge mit vertiefter Erklärung, Beispiel und Grenzen; vollständige Texte bleiben durchsuchbar.
+- Zwölf offlinefähige Price-Action-Lehrbilder für Kerzen, Dochte, Muster, Struktur, Zonen und Projektion ergänzt, einschließlich beschrifteter OHLC-Werte und Bildschirmleser-Beschreibungen.
+- Kostenlose öffentliche Kraken-Spotdaten für ausgewählte Krypto-Euro-Paare angebunden: direkte EUR-OHLC und tatsächlicher Zeitpunkt des letzten Trades. Intervall und begrenzte Historie sind gekennzeichnet; keine Zugangsdaten erforderlich.
+- Aktien-/ETF-Quelle präziser gekennzeichnet; OpenFIGI nicht länger als Kursquelle dargestellt. Fehlende Kurszeitpunkte werden nicht durch die Abrufzeit ersetzt, ungültige Zeitwerte verworfen und doppelte Zeitpunkte bereinigt. Historische Euro-Umrechnung und unbekannte Verzögerung werden offengelegt.
+
 - Wissensdatenbank um zwölf Price-Action-Begriffe erweitert: OHLC, Kerzenaufbau, Doji, Dochte, Engulfing, Intervalle, Struktur, Zonen, Ausbruch/Rücktest und Grenzen der Interpretation.
 - Szenarioauswahl und hervorgehobene Ein-/Ausstiegszonen samt Herleitung aus dem Testbereich in reguläre und gespeicherte Analysen übernommen. Charts zeigen Hauptszenario und stärkste Alternative; alle drei Szenarien bleiben Teil der Modellbewertung.
 - Einfinger-Abfrage interpolierter Projektionspreise mit Fadenkreuz, Szenarioname und Modellschritt ergänzt. Die Anzeige enthält ausdrücklich keine erfundenen zukünftigen Handelstermine. Testdaten bleiben im Testbereich.

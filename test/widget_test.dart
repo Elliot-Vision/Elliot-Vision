@@ -174,6 +174,11 @@ void main() {
     expect(knowledgeSearch, findsOneWidget);
     await tester.enterText(knowledgeSearch, 'Zigzag');
     await tester.pumpAndSettle();
+    expect(find.text('KORREKTUREN'), findsNothing);
+    await tester.tap(find.descendant(
+        of: find.byKey(const ValueKey('knowledge-card-zigzag')),
+        matching: find.text('Zigzag')));
+    await tester.pumpAndSettle();
     expect(find.text('KORREKTUREN'), findsOneWidget);
     expect(find.text('Flat und Expanded Flat'), findsNothing);
 

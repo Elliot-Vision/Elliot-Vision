@@ -1,5 +1,16 @@
 # Price Action: Wissensumfang und Quellen
 
+Alle 47 Wissenseinträge besitzen nun zusätzlich zur Kurzdefinition eine Erklärung,
+ein konkretes Beispiel und eine Einordnung der Grenzen. Die Übersicht zeigt nur
+die Überschriften; Kategorien, Texte und Lehrbilder öffnen sich per Berührung.
+Für alle zwölf Price-Action-Einträge werden eigene skalierende Vektordiagramme
+direkt auf dem Gerät gezeichnet. Sie verwenden keine extern heruntergeladenen
+Marktgrafiken und funktionieren offline. Sie sind als schematische Lehrbilder
+gekennzeichnet und besitzen Textbeschreibungen für Bildschirmleser.
+
+Ergänzende Primärquelle für die Order-Erklärungen:
+[Investor.gov: Stop, Stop-Limit and Trailing Stop Orders](https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins-15).
+
 Die Kategorie „Price Action“ ergänzt zwölf eigenständig formulierte Einträge in
 der Wissenssuche. Musterbeschreibungen erklären die Darstellung; Begriffe wie
 Engulfing, Rücktest und Volumen sind Bildungsinhalte und keine Behauptung, die App

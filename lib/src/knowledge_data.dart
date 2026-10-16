@@ -1,3 +1,5 @@
+import 'knowledge_details.dart';
+
 class KnowledgeEntry {
   const KnowledgeEntry({
     required this.id,
@@ -12,6 +14,9 @@ class KnowledgeEntry {
   final String title;
   final String text;
   final List<String> keywords;
+  String get explanation => knowledgeDetails[id]?.$1 ?? '';
+  String get example => knowledgeDetails[id]?.$2 ?? '';
+  String get limitation => knowledgeDetails[id]?.$3 ?? '';
 
   bool matches(String query) {
     final needle = _normalizeKnowledgeText(query);
@@ -19,7 +24,7 @@ class KnowledgeEntry {
       return true;
     }
     final haystack = _normalizeKnowledgeText(
-      '$category $title $text ${keywords.join(' ')}',
+      '$category $title $text $explanation $example $limitation ${keywords.join(' ')}',
     );
     return haystack.contains(needle);
   }
@@ -253,7 +258,7 @@ const knowledgeEntries = <KnowledgeEntry>[
     category: 'Regeln',
     title: 'Überlappung',
     text:
-        'Überlappung bedeutet, dass sich Preisbereiche zweier Wellen schneiden. Bei einem normalen Impuls darf Welle 4 nicht in den Preisbereich von Welle 1 laufen; bei Diagonalen gilt diese Ausnahme nicht.',
+        'Überlappung bedeutet, dass sich Preisbereiche zweier Wellen schneiden. Bei einem normalen Impuls darf Welle 4 nicht in den Preisbereich von Welle 1 laufen. Bei Diagonalen sind solche Überlappungen dagegen zulässig.',
     keywords: ['Overlap', 'Welle 1', 'Welle 4'],
   ),
   KnowledgeEntry(

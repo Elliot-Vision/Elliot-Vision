@@ -7,6 +7,7 @@ import 'app_state.dart';
 import 'chart.dart';
 import 'formatters.dart';
 import 'knowledge_data.dart';
+import 'knowledge_card.dart';
 import 'models.dart';
 import 'test_screen.dart';
 import 'price_action.dart';
@@ -504,7 +505,7 @@ class _LearnScreenState extends State<LearnScreen> {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
         children: [
           const _ScreenHeader(
-            eyebrow: 'ELLIOTT-WELLEN',
+            eyebrow: 'ELLIOTT-WELLEN & PRICE ACTION',
             title: 'Wissen',
             subtitle:
                 'Die wichtigsten Begriffe, damit du jede Analyse nachvollziehen kannst.',
@@ -546,11 +547,9 @@ class _LearnScreenState extends State<LearnScreen> {
           else
             ...entries.asMap().entries.expand(
                   (item) => <Widget>[
-                    _LearningCard(
-                      number: (item.key + 1).toString().padLeft(2, '0'),
-                      category: item.value.category,
-                      title: item.value.title,
-                      text: item.value.text,
+                    KnowledgeCard(
+                      key: ValueKey('knowledge-card-${item.value.id}'),
+                      entry: item.value,
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -1925,6 +1924,13 @@ class _MarketDataDetails extends StatelessWidget {
                 '${number(instrument.originalPrice)} ${instrument.originalCurrency}',
           ),
           _DetailRow(label: 'Datenquelle', value: instrument.dataSource),
+          _DetailRow(
+              label: 'Kerzenintervall', value: instrument.candleInterval),
+          if (instrument.originalCurrency != 'EUR')
+            const _DetailRow(
+                label: 'Euro-Historie',
+                value:
+                    'Mit aktuellem Umrechnungskurs angenähert; keine historischen FX-Tageskurse.'),
           _DetailRow(label: 'Verzögerung', value: instrument.dataDelay),
           _DetailRow(label: 'Asset-Typ', value: instrument.assetType.label),
           _DetailRow(
@@ -2274,82 +2280,6 @@ class _HistoryTile extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           _ScoreBadge(score: snapshot.overallScore),
-        ],
-      ),
-    );
-  }
-}
-
-class _LearningCard extends StatelessWidget {
-  const _LearningCard({
-    required this.number,
-    required this.category,
-    required this.title,
-    required this.text,
-  });
-
-  final String number;
-  final String category;
-  final String title;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SurfaceCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: AppPalette.lime,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              number,
-              style: const TextStyle(
-                color: AppPalette.onAccent,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  category.toUpperCase(),
-                  style: const TextStyle(
-                    color: AppPalette.lime,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: AppPalette.ink,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    color: AppPalette.muted,
-                    fontSize: 14,
-                    height: 1.45,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

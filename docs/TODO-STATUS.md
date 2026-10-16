@@ -84,6 +84,12 @@ In regulärer Analyse und Testbereich umgesetzt; Geräteabnahme steht aus.
 - durchsuchbare Wissensdatenbank mit mindestens 35 Begriffen
 - zwölf zusätzliche Price-Action-Begriffe; Grundlagen, Kerzenformen, Marktstruktur,
   Zonen, Ausbrüche und Modellgrenzen (Quellen: PRICE-ACTION-WISSEN.md)
+- Alle 47 Wissenseinträge mit aufklappbarer Überschrift, vertiefter Erklärung,
+  Beispiel und Grenzen; zwölf skalierende Price-Action-Lehrbilder, offline verfügbar.
+- Zusätzliche kostenlose Kraken-Euro-Spotdaten für unterstützte Kryptowährungen;
+  Aktien und ETFs bleiben vorerst bei der gekennzeichneten Yahoo-Quelle.
+- Verbesserte Kurszeitpunktprüfung und Quellenangaben; kostenloser Quellenumfang
+  und Grenzen sind in KOSTENLOSE-KURSDATEN.md dokumentiert.
 - durchgängiger Dark Mode, minimalistisches Finanz-App-Design und Farbscore
 - getrennte Analyseansichten für Elliott-Wellen und Price Action
 
