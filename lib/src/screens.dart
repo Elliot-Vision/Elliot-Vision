@@ -933,9 +933,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             onChanged: (value) => setState(() => _detailLevel = value),
           ),
           const SizedBox(height: 18),
-          _SurfaceCard(
-            padding: const EdgeInsets.all(12),
-            child: Stack(
+          Stack(
               children: [
                 ElliottScenarioChart(
                   instrument: instrument,
@@ -952,7 +950,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                     ),
                   ),
               ],
-            ),
           ),
           const SizedBox(height: 14),
           Wrap(
@@ -1089,14 +1086,11 @@ class SnapshotScreen extends StatelessWidget {
             style: const TextStyle(color: AppPalette.muted),
           ),
           const SizedBox(height: 20),
-          _SurfaceCard(
-            padding: const EdgeInsets.all(12),
-            child: ElliottScenarioChart(
+          ElliottScenarioChart(
               instrument: snapshotInstrument,
               analysis: snapshot,
               visibleScenarioIds: visibleIds,
               historyPoints: snapshotInstrument.historyEuro.length,
-            ),
           ),
           const SizedBox(height: 22),
           _SectionTitle(

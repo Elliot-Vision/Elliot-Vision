@@ -58,9 +58,12 @@ Bedienabläufe zu erhalten. Diese Abweichung vom älteren Plan bleibt sichtbar.
 - Verlauf, Projektionen, Zonen und Wellenmarkierungen werden gemeinsam
   horizontal transformiert und am Plot begrenzt. Die Euro-Achse bleibt stabil,
   die Zeitbeschriftungen folgen dem sichtbaren historischen Ausschnitt.
-- Der produktive chart.dart bleibt unverändert. Der experimentelle Painter
-  ist bewusst separat: spätere produktive Übernahme erfordert eine gemeinsame
-  Bereinigung, damit die beiden Varianten nicht dauerhaft auseinanderlaufen.
+- Nach der Geräteerprobung in die reguläre Analyse und Historie übernommen:
+  chart.dart enthält nun den gemeinsamen interaktiven Painter. Der Test-Chart
+  ist ein dünner Wrapper mit getrennten Demodaten; keine doppelte Zeichenlogik.
+  Die reguläre Analyse verwendet weiterhin ihre bisherigen Kursdaten und alle
+  drei Szenariofilter. Der Testbereich bietet maximal zwei Projektionen:
+  Hauptszenario und stärkste Alternative nach Plausibilitätswert.
 - Grundlage des experimentellen Charts ist der vorhandene lokale Zoom-Entwurf;
   dessen Änderungen an Datenabruf und Wiederherstellung wurden nicht übernommen.
 - Änderungen an der bisherigen Navigation beschränken sich auf den Import,
@@ -72,7 +75,7 @@ Flutter 3.44.0 / Dart 3.12.0, festgeschriebene pubspec.lock:
 
 - flutter pub get --enforce-lockfile: erfolgreich.
 - flutter analyze --no-pub: ohne Befund.
-- flutter test --no-pub: 34 Tests erfolgreich (19 bestehende, 15 neue).
+- flutter test --no-pub: 35 Tests erfolgreich (19 bestehende, 16 neue).
 - Neue Tests: Fokusverankerung, Zoomgrenzen, Pan-Grenzen, echte Pinch-Geste,
   Neuzeichnung und Filtererhalt, Reset, Zeitraumwechsel, vertikales Scrollen,
   Navigation bei 390 Pixel Breite und unveränderte gespeicherte App-Daten.

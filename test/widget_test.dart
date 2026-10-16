@@ -4,6 +4,51 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:elliott_vision/elliott_vision.dart';
 
 void main() {
+  testWidgets(
+      'Reguläre Analyse verwendet interaktiven Chart mit eigenen Kursdaten',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState(
+        marketData: DemoMarketDataRepository(),
+        analysisGateway: RuleBasedAnalysisGateway(),
+        store: SharedPreferencesLocalStore());
+    await state.initialize();
+    await _pumpAppleAnalysis(tester, state);
+    await _revealLazyListChild(tester,
+        target: find.byKey(const ValueKey('chart-gestures')),
+        scrollable: _scrollableInside('analysis-content-list'),
+        dragOffset: const Offset(0, -250));
+    final chart =
+        tester.widget<ElliottScenarioChart>(find.byType(ElliottScenarioChart));
+    expect(chart.instrument.historyEuro,
+        state.instrumentById('aapl')!.historyEuro);
+    expect(chart.visibleScenarioIds.length, 3);
+    final rect = tester.getRect(find.byKey(const ValueKey('chart-gestures')));
+    final center = rect.topLeft + Offset(rect.width * 0.32, 150);
+    final first =
+        await tester.startGesture(center - const Offset(25, 0), pointer: 1);
+    final second =
+        await tester.startGesture(center + const Offset(25, 0), pointer: 2);
+    await first.moveTo(center - const Offset(75, 0));
+    await second.moveTo(center + const Offset(75, 0));
+    await tester.pump();
+    expect(find.text('Zurücksetzen (3.0×)'), findsOneWidget);
+    await first.up();
+    await second.up();
+    await tester.pump(const Duration(milliseconds: 400));
+    final finger = await tester.startGesture(center - const Offset(30, 0));
+    await finger.moveTo(center + const Offset(30, 0));
+    await tester.pump();
+    expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('chart-inspection')))
+            .data,
+        contains('€ ·'));
+    await finger.up();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Startseite und Analyse sind erreichbar', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final state = AppState(
@@ -94,8 +139,8 @@ void main() {
     await _pumpAppleAnalysis(tester, state);
 
     Finder bullishChip() => find.byKey(
-      const ValueKey('scenario-filter-pivot-impulse-bullish'),
-    );
+          const ValueKey('scenario-filter-pivot-impulse-bullish'),
+        );
     final analysisScroll = _scrollableInside('analysis-content-list');
     final chartPaint = find.byKey(const ValueKey('scenario-chart-paint'));
     final oldPainter = tester.widget<CustomPaint>(chartPaint).painter!;
@@ -140,7 +185,8 @@ void main() {
     timeframe.onChanged!(ChartTimeframe.oneMonth);
     await _pumpUntil(
       tester,
-      () => timeframeFinder.evaluate().isNotEmpty &&
+      () =>
+          timeframeFinder.evaluate().isNotEmpty &&
           tester
                   .widget<DropdownButton<ChartTimeframe>>(timeframeFinder)
                   .value ==
@@ -187,7 +233,8 @@ void main() {
       find.byKey(const ValueKey('timeframe-dropdown')),
     );
     expect(after.value, ChartTimeframe.maximum);
-    expect(find.textContaining('Zeitraum konnte nicht geladen'), findsOneWidget);
+    expect(
+        find.textContaining('Zeitraum konnte nicht geladen'), findsOneWidget);
   });
 }
 
@@ -200,7 +247,8 @@ Future<void> _openAppleAnalysis(
   await tester.testTextInput.receiveAction(TextInputAction.search);
   await _pumpUntil(
     tester,
-    () => !state.isSearching &&
+    () =>
+        !state.isSearching &&
         state.searchResults.any((instrument) => instrument.id == 'aapl'),
     reason: 'Die Apple-Suche wurde nicht vollständig abgeschlossen.',
   );
@@ -239,10 +287,12 @@ Future<void> _pumpAppleAnalysis(
   expect(find.byKey(const ValueKey('analysis-screen')), findsOneWidget);
 }
 
-Finder _scrollableInside(String listKey) => find.descendant(
+Finder _scrollableInside(String listKey) => find
+    .descendant(
       of: find.byKey(ValueKey<String>(listKey)),
       matching: find.byType(Scrollable),
-    ).first;
+    )
+    .first;
 
 Future<void> _revealLazyListChild(
   WidgetTester tester, {

@@ -97,7 +97,16 @@ void main() {
         .pumpWidget(const MaterialApp(home: Scaffold(body: TestScreen())));
     ExperimentalScenarioChart chart() =>
         tester.widget(find.byType(ExperimentalScenarioChart));
-    for (final kind in ScenarioKind.values) {
+    expect(chart().visibleScenarioIds.length, 2);
+    expect(chart().visibleScenarioIds,
+        contains(chart().analysis.primaryScenarioId));
+    final offeredKinds = chart()
+        .analysis
+        .scenarios
+        .where((s) => chart().visibleScenarioIds.contains(s.id))
+        .map((s) => s.kind)
+        .toList();
+    for (final kind in offeredKinds) {
       final chip = find.byKey(ValueKey('test-scenario-${kind.name}'));
       await tester.scrollUntilVisible(chip, 150);
       await tester.pumpAndSettle();

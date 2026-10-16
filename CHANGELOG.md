@@ -1,5 +1,7 @@
 # Unveröffentlicht – EV-018 / EV-019
 
+- Gemeinsamer interaktiver Chart für reguläre Analyse, gespeicherte Analysen und Test-Tab; doppelte Painter-Implementierung entfernt.
+- Test-Tab zeigt maximal zwei Projektionen: Hauptszenario und stärkste Alternative. Reguläre Analyse behält ihre drei Szenariofilter.
 - Linke Euro-Achsenbeschriftung im Test-Chart entfernt; Kursverlauf erhält 44 Pixel mehr Breite. Preisabfrage und Zoom verwenden dieselben neuen Plot-Grenzen.
 - Test-Chart frei ohne Kartenhintergrund, mit geringerem Seitenabstand.
 - Eigene synthetische Demoreihen mit tatsächlicher Zeitspanne pro Auswahl; Max zeigt zehn Jahre.

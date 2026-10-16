@@ -1,9 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 
 import 'app.dart';
 import 'models.dart';
+
+const _chartSideInset = 14.0;
 
 Color scenarioColor(ScenarioKind kind) {
   switch (kind) {
@@ -16,7 +19,31 @@ Color scenarioColor(ScenarioKind kind) {
   }
 }
 
-class ElliottScenarioChart extends StatelessWidget {
+/// Horizontaler Ausschnitt des gesamten Charts (Verlauf und Projektion).
+class ChartViewport {
+  const ChartViewport({this.start = 0, this.end = 1});
+  final double start;
+  final double end;
+  double get span => end - start;
+  double get zoom => 1 / span;
+
+  ChartViewport transform({
+    required ChartViewport initial,
+    required double scale,
+    required double initialFocal,
+    required double currentFocal,
+    double minimumSpan = 0.05,
+  }) {
+    if (!scale.isFinite || scale <= 0) return initial;
+    final width = (initial.span / scale).clamp(minimumSpan, 1.0).toDouble();
+    final anchor = initial.start + initialFocal * initial.span;
+    final left =
+        (anchor - currentFocal * width).clamp(0.0, 1.0 - width).toDouble();
+    return ChartViewport(start: left, end: left + width);
+  }
+}
+
+class ElliottScenarioChart extends StatefulWidget {
   const ElliottScenarioChart({
     required this.instrument,
     required this.analysis,
@@ -33,27 +60,262 @@ class ElliottScenarioChart extends StatelessWidget {
   final bool showZones;
 
   @override
+  State<ElliottScenarioChart> createState() => _ElliottScenarioChartState();
+}
+
+class _ElliottScenarioChartState extends State<ElliottScenarioChart> {
+  ChartViewport _viewport = const ChartViewport();
+  ChartViewport _gestureStart = const ChartViewport();
+  double _focalStart = 0;
+  bool _restored = false;
+  double? _selectedIndex;
+  bool _selectedProjection = false;
+
+  void _inspect(Offset position, double width) {
+    final fraction =
+        _viewport.start + _focalFraction(position, width) * _viewport.span;
+    final points = widget.instrument.pricePoints;
+    final start = math.max(0, points.length - widget.historyPoints);
+    setState(() {
+      _selectedProjection = fraction > 0.64;
+      _selectedIndex = _selectedProjection || start >= points.length
+          ? null
+          : start +
+              (fraction / 0.64 * (points.length - start - 1))
+                  .clamp(0.0, (points.length - start - 1).toDouble());
+    });
+  }
+
+  String get _inspectionLabel {
+    if (_selectedProjection) return 'Projektion – kein historischer Kurs';
+    if (_selectedIndex == null) return 'Mit einem Finger einen Kurs auswählen';
+    final points = widget.instrument.pricePoints;
+    final low = _selectedIndex!.floor();
+    final high = math.min(low + 1, points.length - 1);
+    final fraction = _selectedIndex! - low;
+    final price =
+        points[low].euro + (points[high].euro - points[low].euro) * fraction;
+    final date = points[low]
+        .timestamp
+        .add(Duration(
+            microseconds: (points[high]
+                        .timestamp
+                        .difference(points[low].timestamp)
+                        .inMicroseconds *
+                    fraction)
+                .round()))
+        .toLocal();
+    String two(int value) => value.toString().padLeft(2, '0');
+    return '≈ ${price.toStringAsFixed(2).replaceAll('.', ',')} € · '
+        '${two(date.day)}.${two(date.month)}.${date.year} '
+        '${two(date.hour)}:${two(date.minute)} · interpoliert';
+  }
+
+  String get _storageId => 'chart-viewport-${widget.instrument.id}-'
+      '${widget.instrument.selectedSymbol}-${widget.instrument.timeframe.name}';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_restored) {
+      _viewport = PageStorage.maybeOf(context)?.readState(
+            context,
+            identifier: _storageId,
+          ) as ChartViewport? ??
+          const ChartViewport();
+      _restored = true;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ElliottScenarioChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.instrument, widget.instrument)) {
+      _selectedIndex = null;
+      _selectedProjection = false;
+    }
+    if (oldWidget.instrument.id != widget.instrument.id ||
+        oldWidget.instrument.selectedSymbol !=
+            widget.instrument.selectedSymbol ||
+        oldWidget.instrument.timeframe != widget.instrument.timeframe) {
+      _viewport = const ChartViewport();
+      _selectedIndex = null;
+      _selectedProjection = false;
+      PageStorage.maybeOf(context)?.writeState(
+        context,
+        _viewport,
+        identifier: _storageId,
+      );
+    }
+  }
+
+  void _setViewport(ChartViewport value) {
+    setState(() {
+      _viewport = value;
+      _selectedIndex = null;
+      _selectedProjection = false;
+    });
+    PageStorage.maybeOf(context)?.writeState(
+      context,
+      value,
+      identifier: _storageId,
+    );
+  }
+
+  double _focalFraction(Offset focal, double width) =>
+      ((focal.dx - _chartSideInset) /
+              math.max(1.0, width - 2 * _chartSideInset))
+          .clamp(0.0, 1.0)
+          .toDouble();
+
+  @override
   Widget build(BuildContext context) {
-    final visibleIds = Set<String>.unmodifiable(visibleScenarioIds);
-    return Semantics(
-      label:
-          'Kurschart für ${instrument.name} im Zeitraum ${instrument.timeframe.label} '
-          'mit ${visibleIds.length} sichtbaren Szenarien',
-      child: SizedBox(
-        height: 350,
-        width: double.infinity,
-        child: CustomPaint(
-          key: const ValueKey('scenario-chart-paint'),
-          painter: _ChartPainter(
-            instrument: instrument,
-            analysis: analysis,
-            visibleScenarioIds: visibleIds,
-            historyPoints: historyPoints,
-            showZones: showZones,
+    final visibleIds = Set<String>.unmodifiable(widget.visibleScenarioIds);
+    return Column(
+      children: [
+        SizedBox(
+          height: 52,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(_inspectionLabel,
+                key: const ValueKey('chart-inspection'),
+                style: const TextStyle(fontWeight: FontWeight.w600)),
           ),
         ),
-      ),
+        Semantics(
+          label: 'Kurschart für ${widget.instrument.name} im Zeitraum '
+              '${widget.instrument.timeframe.label} mit '
+              '${visibleIds.length} sichtbaren Szenarien. '
+              'Zoom ${_viewport.zoom.toStringAsFixed(1)}-fach.',
+          child: SizedBox(
+            height: 350,
+            width: double.infinity,
+            child: LayoutBuilder(
+              builder: (context, constraints) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onDoubleTap: () => _setViewport(const ChartViewport()),
+                child: RawGestureDetector(
+                  key: const ValueKey('chart-gestures'),
+                  behavior: HitTestBehavior.opaque,
+                  gestures: {
+                    _ChartScaleGestureRecognizer:
+                        GestureRecognizerFactoryWithHandlers<
+                            _ChartScaleGestureRecognizer>(
+                      () => _ChartScaleGestureRecognizer(),
+                      (recognizer) {
+                        recognizer
+                          ..onStart = (details) {
+                            _gestureStart = _viewport;
+                            _focalStart = _focalFraction(
+                              details.localFocalPoint,
+                              constraints.maxWidth,
+                            );
+                            if (details.pointerCount == 1) {
+                              _inspect(details.localFocalPoint,
+                                  constraints.maxWidth);
+                            }
+                          }
+                          ..onUpdate = (details) {
+                            if (details.pointerCount < 2) {
+                              _inspect(details.localFocalPoint,
+                                  constraints.maxWidth);
+                              return;
+                            }
+                            _setViewport(
+                              _viewport.transform(
+                                initial: _gestureStart,
+                                scale: details.scale,
+                                initialFocal: _focalStart,
+                                currentFocal: _focalFraction(
+                                  details.localFocalPoint,
+                                  constraints.maxWidth,
+                                ),
+                              ),
+                            );
+                          };
+                      },
+                    ),
+                  },
+                  child: SizedBox.expand(
+                      child: CustomPaint(
+                    key: const ValueKey('scenario-chart-paint'),
+                    painter: _ChartPainter(
+                      instrument: widget.instrument,
+                      analysis: widget.analysis,
+                      visibleScenarioIds: visibleIds,
+                      historyPoints: widget.historyPoints,
+                      showZones: widget.showZones,
+                      viewport: _viewport,
+                      selectedIndex: _selectedIndex,
+                    ),
+                  )),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Ein Finger: Kurs · Zwei Finger: Zoom und Verschieben',
+                style: TextStyle(color: AppPalette.muted, fontSize: 10),
+              ),
+            ),
+            TextButton(
+              key: const ValueKey('chart-reset-zoom'),
+              onPressed: () => _setViewport(const ChartViewport()),
+              child:
+                  Text('Zurücksetzen (${_viewport.zoom.toStringAsFixed(1)}×)'),
+            ),
+          ],
+        ),
+      ],
     );
+  }
+}
+
+/// Ein Finger vertikal scrollt weiterhin die Analyseseite.
+/// Horizontales Ablesen und Gesten mit zwei Fingern gehören dem Chart.
+class _ChartScaleGestureRecognizer extends ScaleGestureRecognizer {
+  final Map<int, Offset> _starts = {};
+  bool _multiTouch = false;
+
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    _starts[event.pointer] = event.position;
+    super.addAllowedPointer(event);
+  }
+
+  @override
+  void handleEvent(PointerEvent event) {
+    if (event is PointerDownEvent && _starts.length >= 2) {
+      _multiTouch = true;
+    }
+    if (event is PointerMoveEvent && !_multiTouch && _starts.length == 1) {
+      final start = _starts[event.pointer];
+      if (start != null) {
+        final delta = event.position - start;
+        if (delta.dy.abs() > kTouchSlop && delta.dy.abs() > delta.dx.abs()) {
+          resolve(GestureDisposition.rejected);
+          return;
+        }
+      }
+    }
+    super.handleEvent(event);
+    if (event is PointerDownEvent && _multiTouch) {
+      resolve(GestureDisposition.accepted);
+    }
+    if (event is PointerUpEvent || event is PointerCancelEvent) {
+      _starts.remove(event.pointer);
+    }
+  }
+
+  @override
+  void didStopTrackingLastPointer(int pointer) {
+    _starts.clear();
+    _multiTouch = false;
+    super.didStopTrackingLastPointer(pointer);
   }
 }
 
@@ -64,6 +326,8 @@ class _ChartPainter extends CustomPainter {
     required this.visibleScenarioIds,
     required this.historyPoints,
     required this.showZones,
+    required this.viewport,
+    this.selectedIndex,
   });
 
   final Instrument instrument;
@@ -71,22 +335,29 @@ class _ChartPainter extends CustomPainter {
   final Set<String> visibleScenarioIds;
   final int historyPoints;
   final bool showZones;
+  final ChartViewport viewport;
+  final double? selectedIndex;
+
+  double _x(double original, double left, double right) =>
+      left +
+      ((original - left) / (right - left) - viewport.start) /
+          viewport.span *
+          (right - left);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final background = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      const Radius.circular(20),
-    );
-    canvas.drawRRect(background, Paint()..color = AppPalette.surface);
-
-    const left = 58.0;
-    const right = 14.0;
+    const left = _chartSideInset;
+    const right = _chartSideInset;
     const top = 34.0;
     const bottom = 52.0;
     final plotWidth = size.width - left - right;
     final plotHeight = size.height - top - bottom;
-    final historyEndX = left + plotWidth * 0.64;
+    final plotRight = size.width - right;
+    final originalHistoryEnd = left + plotWidth * 0.64;
+    double xFor(double fraction) =>
+        left + (fraction - viewport.start) / viewport.span * plotWidth;
+    final historyEndX = xFor(0.64);
+    final projectionEndX = xFor(1);
 
     final fullPoints = instrument.pricePoints;
     final startIndex = math.max(0, fullPoints.length - historyPoints);
@@ -121,8 +392,12 @@ class _ChartPainter extends CustomPainter {
     final maxValue = rawMax + rawRange * 0.10;
 
     double yFor(double value) =>
-        top + plotHeight - ((value - minValue) / (maxValue - minValue)) * plotHeight;
+        top +
+        plotHeight -
+        ((value - minValue) / (maxValue - minValue)) * plotHeight;
 
+    canvas.save();
+    canvas.clipRect(Rect.fromLTWH(left, top, plotWidth, plotHeight));
     if (showZones) {
       for (final scenario in visibleScenarios) {
         final primary = scenario.id == analysis.primaryScenarioId;
@@ -130,7 +405,7 @@ class _ChartPainter extends CustomPainter {
         _drawZone(
           canvas,
           historyEndX,
-          size.width - right,
+          projectionEndX,
           yFor(scenario.entryLowEuro),
           yFor(scenario.entryHighEuro),
           AppPalette.blue.withAlpha(primary ? 34 : 16),
@@ -138,7 +413,7 @@ class _ChartPainter extends CustomPainter {
         _drawZone(
           canvas,
           historyEndX,
-          size.width - right,
+          projectionEndX,
           yFor(scenario.exitLowEuro),
           yFor(scenario.exitHighEuro),
           color.withAlpha(primary ? 30 : 14),
@@ -146,7 +421,7 @@ class _ChartPainter extends CustomPainter {
         _drawDashedLine(
           canvas,
           Offset(historyEndX, yFor(scenario.stopLossEuro)),
-          Offset(size.width - right, yFor(scenario.stopLossEuro)),
+          Offset(projectionEndX, yFor(scenario.stopLossEuro)),
           Paint()
             ..color = AppPalette.red.withAlpha(primary ? 180 : 95)
             ..strokeWidth = primary ? 1.4 : 1,
@@ -154,22 +429,18 @@ class _ChartPainter extends CustomPainter {
       }
     }
 
+    canvas.restore();
+
     final gridPaint = Paint()
       ..color = AppPalette.line
       ..strokeWidth = 1;
     for (var index = 0; index <= 4; index++) {
       final y = top + (plotHeight / 4) * index;
-      canvas.drawLine(Offset(left, y), Offset(size.width - right, y), gridPaint);
-      final value = maxValue - (maxValue - minValue) * index / 4;
-      _paintTextRight(
-        canvas,
-        _axisEuro(value),
-        Offset(left - 7, y - 6),
-        color: AppPalette.muted,
-        fontSize: 9,
-        fontWeight: FontWeight.w600,
-      );
+      canvas.drawLine(
+          Offset(left, y), Offset(size.width - right, y), gridPaint);
     }
+    canvas.save();
+    canvas.clipRect(Rect.fromLTWH(left, top, plotWidth, plotHeight));
     canvas.drawLine(
       Offset(historyEndX, top),
       Offset(historyEndX, top + plotHeight),
@@ -178,28 +449,33 @@ class _ChartPainter extends CustomPainter {
         ..strokeWidth = 1,
     );
 
-    _paintText(
-      canvas,
-      'VERLAUF',
-      const Offset(left, 12),
-      color: AppPalette.muted,
-      fontSize: 10,
-      fontWeight: FontWeight.w800,
-    );
-    _paintText(
-      canvas,
-      'PROJEKTION',
-      Offset(historyEndX + 9, 12),
-      color: AppPalette.muted,
-      fontSize: 10,
-      fontWeight: FontWeight.w800,
-    );
-
+    canvas.restore();
+    if (viewport.start < 0.64) {
+      _paintText(
+        canvas,
+        'VERLAUF',
+        const Offset(left, 12),
+        color: AppPalette.muted,
+        fontSize: 10,
+        fontWeight: FontWeight.w800,
+      );
+    }
+    if (viewport.end > 0.64) {
+      _paintText(
+        canvas,
+        'PROJEKTION',
+        Offset(math.max(left, historyEndX + 9), 12),
+        color: AppPalette.muted,
+        fontSize: 10,
+        fontWeight: FontWeight.w800,
+      );
+    }
+    canvas.save();
+    canvas.clipRect(Rect.fromLTWH(left, top, plotWidth, plotHeight));
     if (history.length > 1) {
       final historyPath = Path();
       for (var index = 0; index < history.length; index++) {
-        final x = left +
-            (historyEndX - left) * (index / math.max(1, history.length - 1));
+        final x = xFor(0.64 * index / math.max(1, history.length - 1));
         final point = Offset(x, yFor(history[index].euro));
         index == 0
             ? historyPath.moveTo(point.dx, point.dy)
@@ -214,7 +490,6 @@ class _ChartPainter extends CustomPainter {
           ..strokeJoin = StrokeJoin.round
           ..style = PaintingStyle.stroke,
       );
-      _drawXAxis(canvas, history, left, historyEndX, top + plotHeight + 9);
     }
 
     for (var scenarioIndex = 0;
@@ -225,7 +500,7 @@ class _ChartPainter extends CustomPainter {
       final path = Path()..moveTo(historyEndX, yFor(instrument.euroPrice));
       for (var index = 0; index < scenario.projectionEuro.length; index++) {
         final x = historyEndX +
-            (size.width - right - historyEndX) *
+            (projectionEndX - historyEndX) *
                 ((index + 1) / scenario.projectionEuro.length);
         path.lineTo(x, yFor(scenario.projectionEuro[index]));
       }
@@ -241,7 +516,7 @@ class _ChartPainter extends CustomPainter {
       _drawDashedLine(
         canvas,
         Offset(historyEndX + 5, yFor(scenario.targetEuro)),
-        Offset(size.width - right, yFor(scenario.targetEuro)),
+        Offset(projectionEndX, yFor(scenario.targetEuro)),
         Paint()
           ..color = color.withAlpha(115)
           ..strokeWidth = 1,
@@ -258,7 +533,7 @@ class _ChartPainter extends CustomPainter {
         canvas,
         scenario,
         historyEndX,
-        size.width - right,
+        projectionEndX,
         yFor,
         scenarioIndex,
       );
@@ -268,7 +543,8 @@ class _ChartPainter extends CustomPainter {
         startIndex,
         history.length,
         left,
-        historyEndX,
+        originalHistoryEnd,
+        plotRight,
         yFor,
         scenarioIndex,
       );
@@ -290,10 +566,31 @@ class _ChartPainter extends CustomPainter {
       fontWeight: FontWeight.w800,
     );
 
+    if (selectedIndex != null && history.length > 1) {
+      final localIndex = selectedIndex! - startIndex;
+      if (localIndex >= 0 && localIndex < history.length) {
+        final x = xFor(0.64 * localIndex / (history.length - 1));
+        final low = localIndex.floor();
+        final high = math.min(low + 1, history.length - 1);
+        final y = yFor(history[low].euro +
+            (history[high].euro - history[low].euro) * (localIndex - low));
+        final markerPaint = Paint()
+          ..color = AppPalette.ink
+          ..strokeWidth = 1;
+        canvas.drawLine(
+            Offset(x, top), Offset(x, top + plotHeight), markerPaint);
+        canvas.drawLine(Offset(left, y), Offset(plotRight, y), markerPaint);
+        canvas.drawCircle(Offset(x, y), 5, Paint()..color = AppPalette.blue);
+      }
+    }
+    canvas.restore();
+    _drawXAxis(canvas, history, left, originalHistoryEnd, plotRight,
+        top + plotHeight + 9);
+
     _paintText(
       canvas,
       'ATH ${_compactEuro(instrument.athEuro)} '
-          '(${instrument.distanceToAthPercent.toStringAsFixed(1).replaceAll('.', ',')} %)',
+      '(${instrument.distanceToAthPercent.toStringAsFixed(1).replaceAll('.', ',')} %)',
       Offset(left, size.height - 16),
       color: AppPalette.muted,
       fontSize: 9,
@@ -317,13 +614,26 @@ class _ChartPainter extends CustomPainter {
     List<PricePoint> points,
     double left,
     double right,
+    double plotRight,
     double y,
   ) {
-    final indexes = <int>{0, points.length ~/ 2, points.length - 1}.toList()
-      ..sort();
+    if (points.length < 2 || viewport.start >= 0.64) return;
+    final first = (viewport.start / 0.64 * (points.length - 1))
+        .ceil()
+        .clamp(0, points.length - 1)
+        .toInt();
+    final last = (math.min(viewport.end, 0.64) / 0.64 * (points.length - 1))
+        .floor()
+        .clamp(0, points.length - 1)
+        .toInt();
+    if (last < first) return;
+    final indexes = <int>{first, (first + last) ~/ 2, last}.toList()..sort();
     for (var position = 0; position < indexes.length; position++) {
       final index = indexes[position];
-      final x = left + (right - left) * (index / math.max(1, points.length - 1));
+      final x = _x(
+          left + (right - left) * (index / math.max(1, points.length - 1)),
+          left,
+          plotRight);
       final label = _axisDate(points[index].timestamp);
       if (position == 0) {
         _paintText(
@@ -360,11 +670,11 @@ class _ChartPainter extends CustomPainter {
     }
     final labels = scenario.waveLabels;
     for (var index = 0; index < labels.length; index++) {
-      final projectionIndex = ((index + 1) * scenario.projectionEuro.length /
-              (labels.length + 1))
-          .round()
-          .clamp(0, scenario.projectionEuro.length - 1)
-          .toInt();
+      final projectionIndex =
+          ((index + 1) * scenario.projectionEuro.length / (labels.length + 1))
+              .round()
+              .clamp(0, scenario.projectionEuro.length - 1)
+              .toInt();
       final x = fromX +
           (toX - fromX) *
               ((projectionIndex + 1) / scenario.projectionEuro.length);
@@ -387,6 +697,7 @@ class _ChartPainter extends CustomPainter {
     int visibleHistoryLength,
     double fromX,
     double toX,
+    double plotRight,
     double Function(double) yFor,
     int scenarioIndex,
   ) {
@@ -399,8 +710,10 @@ class _ChartPainter extends CustomPainter {
       if (localIndex < 0 || localIndex >= visibleHistoryLength) {
         continue;
       }
-      final x = fromX +
-          (toX - fromX) * (localIndex / (visibleHistoryLength - 1));
+      final x = _x(
+          fromX + (toX - fromX) * (localIndex / (visibleHistoryLength - 1)),
+          fromX,
+          plotRight);
       final y = yFor(marker.priceEuro);
       canvas.drawCircle(
         Offset(x, y),
@@ -461,7 +774,8 @@ class _ChartPainter extends CustomPainter {
     Color color,
   ) {
     canvas.drawRect(
-      Rect.fromLTRB(left, math.min(firstY, secondY), right, math.max(firstY, secondY)),
+      Rect.fromLTRB(
+          left, math.min(firstY, secondY), right, math.max(firstY, secondY)),
       Paint()..color = color,
     );
   }
@@ -534,7 +848,11 @@ class _ChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ChartPainter oldDelegate) {
-    return oldDelegate.instrument.id != instrument.id ||
+    return oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.viewport.start != viewport.start ||
+        oldDelegate.viewport.end != viewport.end ||
+        oldDelegate.instrument.id != instrument.id ||
+        !identical(oldDelegate.instrument, instrument) ||
         oldDelegate.instrument.dataTimestamp != instrument.dataTimestamp ||
         oldDelegate.instrument.timeframe != instrument.timeframe ||
         oldDelegate.analysis.id != analysis.id ||

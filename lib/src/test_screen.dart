@@ -26,6 +26,17 @@ class _TestScreenState extends State<TestScreen> {
   final _visibleKinds = ScenarioKind.values.toSet();
   bool _showZones = true;
 
+  List<AnalysisScenario> get _testScenarios {
+    final ranked = List<AnalysisScenario>.of(_analysis.scenarios)
+      ..sort((a, b) {
+        if (a.id == b.id) return 0;
+        if (a.id == _analysis.primaryScenarioId) return -1;
+        if (b.id == _analysis.primaryScenarioId) return 1;
+        return b.probability.compareTo(a.probability);
+      });
+    return ranked.take(2).toList();
+  }
+
   void _select(String id, ChartTimeframe timeframe) {
     // Always use the complete demo series, including when returning from 1D.
     final source = _instruments.firstWhere((item) => item.id == id);
@@ -86,7 +97,7 @@ class _TestScreenState extends State<TestScreen> {
           ExperimentalScenarioChart(
             instrument: _instrument,
             analysis: _analysis,
-            visibleScenarioIds: _analysis.scenarios
+            visibleScenarioIds: _testScenarios
                 .where((s) => _visibleKinds.contains(s.kind))
                 .map((s) => s.id)
                 .toSet(),
@@ -95,9 +106,11 @@ class _TestScreenState extends State<TestScreen> {
           ),
           const SizedBox(height: 16),
           Text('Szenarien', style: Theme.of(context).textTheme.titleMedium),
+          const Text('Hauptszenario und stärkste Alternative'),
           Wrap(
             spacing: 8,
-            children: ScenarioKind.values
+            children: _testScenarios
+                .map((scenario) => scenario.kind)
                 .map((kind) => FilterChip(
                       key: ValueKey('test-scenario-${kind.name}'),
                       label: Text(kind.label),

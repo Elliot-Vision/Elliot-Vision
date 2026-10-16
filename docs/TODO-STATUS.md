@@ -11,7 +11,9 @@ Stand: Version 0.4.1+7
 - Nutzer bestätigt fünf Demo-Aktien, Einfinger-Kursabfrage und funktionierenden Zoom.
 - Zeitraum-Demoreihen und kontinuierlich interpoliertes Ablesen nachgebessert; neue Geräteprüfung ausstehend.
 - Rahmenlose Darstellung ohne Kartenhintergrund im Test-Tab ergänzt.
-- Reguläre Analyse bleibt unverändert.
+- Gemeinsamer Chart in regulärer Analyse und Historie übernommen: Zoom, Verschieben, interpolierte Kursabfrage, freie Darstellung ohne linke Euro-Achse.
+- Testbereich auf Hauptszenario und stärkste Alternative begrenzt; reguläre Analyse behält alle drei Szenarien.
+- Datenabruf und gespeicherte Snapshots bleiben an ihre bisherigen Quellen angebunden; Demoreihen bleiben im Testbereich.
 - Vollständiger Abgleich: [Repository-Prüfung](REPOSITORY-ABGLEICH-EV018-EV019.md).
 
 ## In der App umgesetzt
