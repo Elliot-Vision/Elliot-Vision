@@ -1,6 +1,49 @@
 # Elliott Vision – Umsetzungsstatus der zentralen To-do-Liste
 
-Stand: Version 0.4.1+7
+Stand: Entwicklungsbranch vom 16. Oktober 2026 (Basis 0.4.1+7)
+
+## Umgesetzt: Analyse-Reiter für Elliott-Wellen und Price Action
+
+In regulärer Analyse und Testbereich umgesetzt; Geräteabnahme steht aus.
+
+- „Kompakt“, „Standard“ und „Experte“ in der regulären Analyse ersetzt.
+- Beide Bereiche zeigen einen eigenen Inhalt: Elliott-Szenarien oder OHLC-Kerzen.
+- Kerzen aus vollständigen Anbieterwerten, einschließlich Euro-Umrechnung und
+  Anpassung an bereinigte Schlusskurse; alte Snapshots bleiben lesbar.
+- Synthetische Kerzen ausschließlich für die gekennzeichneten Testdaten.
+- Price Action beschreibt die letzte Kerze (Körper, Doji-ähnlich, langer Docht),
+  die Spanne und Schlusskursänderung der letzten bis zu 20 Kerzen.
+- Erklärungen zu OHLC, Körper, Dochten, Intervallen und laufenden Kerzen.
+- Vorhandene Elliott-Erklärungen und Regelprüfungen bleiben zugänglich.
+- Keine erfundenen Kerzen bei fehlenden OHLC-Daten; Neuladen wird angeboten.
+
+## Entwicklungsbranch EV-018 / EV-019
+
+- Testbereich: Projektion oder Einstiegs-/Ausstiegszone antippen, um das
+  zugehörige Szenario hervorzuheben. Zusätzliche beschriftete Szenarioauswahl,
+  aufhebbare Hervorhebung und Detailansicht mit Kurswerten und Erklärungen.
+- Detailansicht zeigt verwendete Demoreihe, Zeitraum, jüngste Spanne,
+  Zählmethode, Regelprüfungen und Bewertungsfaktoren. Android-Abnahme ausstehend.
+- Diese Funktionen sind jetzt auch in regulärer Analyse und gespeicherten Analysen
+  verfügbar; dort mit den jeweiligen Kursdaten und Quellen statt synthetischer Testreihen.
+- Projektionspreisabfrage per Finger mit Szenarioname, interpoliertem Modellwert
+  und Modellschritt. Das Modell liefert keine zukünftigen Handelstermine.
+
+- Separater Test-Tab mit eigenen, sichtbar gekennzeichneten Demodaten.
+- Demo-Wertpapierauswahl, sieben Zeiträume, Szenarien einzeln schaltbar und Zonen ein-/ausblendbar.
+- Stufenloser horizontaler Zoom im gemeinsamen Chart.
+- Zoom und Scrollen auf dem zurückgenommenen Stand auf Android bestätigt; Verschieben und Reset zuvor ebenfalls bestätigt.
+- Nutzer bestätigt fünf Demo-Aktien, Einfinger-Kursabfrage und funktionierenden Zoom.
+- Zeitraum-Demoreihen und kontinuierlich interpoliertes Ablesen nachgebessert; neue Geräteprüfung ausstehend.
+- Horizontale Ablesegesten bleiben nach Beginn auch bei vertikalem Zittern
+  aktiv; Punkteliste wird zwischengespeichert und unsichtbare Projektionsstriche
+  werden beim Zeichnen übersprungen. Regressionstest für Richtungswechsel ergänzt.
+- Rahmenlose Darstellung ohne Kartenhintergrund im Test-Tab ergänzt.
+- Gemeinsamer Chart in regulärer Analyse und Historie übernommen: Zoom, Verschieben, interpolierte Kursabfrage, freie Darstellung ohne linke Euro-Achse.
+- Charts in Testbereich, regulärer Analyse und Historie auf Hauptszenario und stärkste
+  Alternative begrenzt; Modellbewertung und Erläuterungen enthalten weiter drei Szenarien.
+- Datenabruf und gespeicherte Snapshots bleiben an ihre bisherigen Quellen angebunden; Demoreihen bleiben im Testbereich.
+- Vollständiger Abgleich: [Repository-Prüfung](REPOSITORY-ABGLEICH-EV018-EV019.md).
 
 ## In der App umgesetzt
 
@@ -14,7 +57,7 @@ Stand: Version 0.4.1+7
 - Einstiegs-, Ausstiegs-, Ziel-, Stop- und Invalidierungszonen
 - Analysehistorie mit vollständigem Instrument- und Kurs-Snapshot
 - Regelwerk-, Erklärungsmodell- und Promptversions-Nachweis
-- X-Achse mit Datum/Uhrzeit und Y-Achse mit Euro-Kurs
+- Zeitachse und Euro-Kursabfrage mit dem Finger; keine linke Preisachse
 - 1 Tag, 5 Tage, 1 Monat, 3 Monate, 1 Jahr, 5 Jahre und Max
 - automatisch passende 5-Minuten-, 30-Minuten-, Tages-, Wochen- und Monatsdaten
 - aktueller Kurs, Kurszeitpunkt, ATH, ATL und aktuelle Abstände
@@ -39,8 +82,26 @@ Stand: Version 0.4.1+7
 - Favoriten direkt analysierbar
 - dokumentierte Quellen, Endpunkte, Intervalle, FX-, Split- und Fallback-Logik
 - durchsuchbare Wissensdatenbank mit mindestens 35 Begriffen
+- zwölf zusätzliche Price-Action-Begriffe; Grundlagen, Kerzenformen, Marktstruktur,
+  Zonen, Ausbrüche und Modellgrenzen (Quellen: PRICE-ACTION-WISSEN.md)
+- Alle 47 Wissenseinträge mit aufklappbarer Überschrift, vertiefter Erklärung,
+  Beispiel und Grenzen; zwölf skalierende Price-Action-Lehrbilder, offline verfügbar.
+- Zusätzliche kostenlose Kraken-Euro-Spotdaten für unterstützte Kryptowährungen;
+  Aktien und ETFs bleiben vorerst bei der gekennzeichneten Yahoo-Quelle.
+- Verbesserte Kurszeitpunktprüfung und Quellenangaben; kostenloser Quellenumfang
+  und Grenzen sind in KOSTENLOSE-KURSDATEN.md dokumentiert.
 - durchgängiger Dark Mode, minimalistisches Finanz-App-Design und Farbscore
-- drei Informationsebenen: Kompakt, Standard und Experte
+- getrennte Analyseansichten für Elliott-Wellen und Price Action
+
+## Technisch vorbereitet; Einrichtung / Abnahme noch offen
+
+- Workflow `android-test-signed` für Test-APKs mit fester Signatur und steigender
+  Buildnummer. Der passende Keystore muss in Codemagic hinterlegt werden.
+- CSV-Vergleichswerkzeug für unabhängige Referenzdaten, einschließlich Tests.
+  Ein tatsächlich unabhängiger Datensatz muss noch bereitgestellt werden.
+- Anleitung und konkrete Freigabeschritte: [Test-Signierung und Freigabe](TEST-SIGNIERUNG-UND-FREIGABE.md).
+- Android-Prüfung: längeres Ablesen mit Richtungswechsel, Zoom/Pan/Scrollen,
+  Zeitraum- und Reiterwechsel, OHLC-Anzeige und Installation eines Folgeupdates.
 
 ## Extern vor einer öffentlichen Produktionsversion erforderlich
 

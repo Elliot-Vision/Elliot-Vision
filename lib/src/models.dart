@@ -107,6 +107,37 @@ extension ChartTimeframeText on ChartTimeframe {
   }
 }
 
+class PriceCandle {
+  const PriceCandle(
+      {required this.timestamp,
+      required this.open,
+      required this.high,
+      required this.low,
+      required this.close});
+  final DateTime timestamp;
+  final double open, high, low, close;
+  bool get isValid =>
+      [open, high, low, close].every((v) => v.isFinite && v > 0) &&
+      high >= open &&
+      high >= close &&
+      low <= open &&
+      low <= close &&
+      high >= low;
+  Map<String, Object?> toJson() => {
+        'timestamp': timestamp.toIso8601String(),
+        'open': open,
+        'high': high,
+        'low': low,
+        'close': close
+      };
+  factory PriceCandle.fromJson(Map<String, Object?> json) => PriceCandle(
+      timestamp: DateTime.parse(json['timestamp']! as String),
+      open: (json['open']! as num).toDouble(),
+      high: (json['high']! as num).toDouble(),
+      low: (json['low']! as num).toDouble(),
+      close: (json['close']! as num).toDouble());
+}
+
 class PricePoint {
   const PricePoint({required this.timestamp, required this.euro});
 
@@ -114,14 +145,14 @@ class PricePoint {
   final double euro;
 
   Map<String, Object?> toJson() => {
-    'timestamp': timestamp.toIso8601String(),
-    'euro': euro,
-  };
+        'timestamp': timestamp.toIso8601String(),
+        'euro': euro,
+      };
 
   factory PricePoint.fromJson(Map<String, Object?> json) => PricePoint(
-    timestamp: DateTime.parse(json['timestamp']! as String),
-    euro: (json['euro']! as num).toDouble(),
-  );
+        timestamp: DateTime.parse(json['timestamp']! as String),
+        euro: (json['euro']! as num).toDouble(),
+      );
 }
 
 class Instrument {
@@ -141,11 +172,13 @@ class Instrument {
     required this.dataTimestamp,
     required this.historyEuro,
     this.historyTimestamps = const <DateTime>[],
+    this.candlesEuro = const <PriceCandle>[],
     this.venueSymbols = const <String, String>{},
     this.assetType = AssetType.stock,
     this.timeframe = ChartTimeframe.maximum,
     this.dataSource = 'Lokaler Datenstand',
     this.dataDelay = 'Gespeicherter Kursstand',
+    this.dataInterval = '',
     this.isLive = false,
   });
 
@@ -164,6 +197,8 @@ class Instrument {
   final DateTime dataTimestamp;
   final List<double> historyEuro;
   final List<DateTime> historyTimestamps;
+  final List<PriceCandle> candlesEuro;
+
   /// Vom Datenanbieter bestaetigte Zuordnung Handelsplatz -> Kurssymbol.
   /// Nur Handelsplaetze mit einem Eintrag werden in der Auswahl angeboten.
   final Map<String, String> venueSymbols;
@@ -171,6 +206,9 @@ class Instrument {
   final ChartTimeframe timeframe;
   final String dataSource;
   final String dataDelay;
+  final String dataInterval;
+  String get candleInterval =>
+      dataInterval.isEmpty ? timeframe.interval : dataInterval;
   final bool isLive;
 
   String get selectedSymbol => venueSymbols[defaultVenue] ?? ticker;
@@ -182,13 +220,11 @@ class Instrument {
     return ((historyEuro.last / historyEuro.first) - 1) * 100;
   }
 
-  double get distanceToAthPercent => athEuro <= 0
-      ? 0
-      : ((euroPrice / athEuro) - 1) * 100;
+  double get distanceToAthPercent =>
+      athEuro <= 0 ? 0 : ((euroPrice / athEuro) - 1) * 100;
 
-  double get distanceToAtlPercent => atlEuro <= 0
-      ? 0
-      : ((euroPrice / atlEuro) - 1) * 100;
+  double get distanceToAtlPercent =>
+      atlEuro <= 0 ? 0 : ((euroPrice / atlEuro) - 1) * 100;
 
   List<PricePoint> get pricePoints {
     final timestamps = normalizedHistoryTimestamps;
@@ -209,19 +245,18 @@ class Instrument {
     final step = timeframe == ChartTimeframe.oneDay
         ? const Duration(minutes: 5)
         : timeframe == ChartTimeframe.fiveDays
-        ? const Duration(minutes: 30)
-        : timeframe == ChartTimeframe.oneMonth ||
-              timeframe == ChartTimeframe.threeMonths
-        ? const Duration(days: 1)
-        : timeframe == ChartTimeframe.oneYear
-        ? const Duration(days: 7)
-        : const Duration(days: 30);
+            ? const Duration(minutes: 30)
+            : timeframe == ChartTimeframe.oneMonth ||
+                    timeframe == ChartTimeframe.threeMonths
+                ? const Duration(days: 1)
+                : timeframe == ChartTimeframe.oneYear
+                    ? const Duration(days: 7)
+                    : const Duration(days: 30);
     return List<DateTime>.generate(
       historyEuro.length,
       (index) => dataTimestamp.subtract(
         Duration(
-          microseconds:
-              step.inMicroseconds * (historyEuro.length - index - 1),
+          microseconds: step.inMicroseconds * (historyEuro.length - index - 1),
         ),
       ),
       growable: false,
@@ -244,59 +279,65 @@ class Instrument {
     DateTime? dataTimestamp,
     List<double>? historyEuro,
     List<DateTime>? historyTimestamps,
+    List<PriceCandle>? candlesEuro,
     ChartTimeframe? timeframe,
     String? dataSource,
     String? dataDelay,
+    String? dataInterval,
     bool? isLive,
-  }) => Instrument(
-    id: id,
-    name: name ?? this.name,
-    ticker: ticker ?? this.ticker,
-    isin: isin ?? this.isin,
-    defaultVenue: defaultVenue ?? this.defaultVenue,
-    venues: venues ?? this.venues,
-    venueSymbols: venueSymbols ?? this.venueSymbols,
-    originalCurrency: originalCurrency ?? this.originalCurrency,
-    originalPrice: originalPrice ?? this.originalPrice,
-    euroPrice: euroPrice ?? this.euroPrice,
-    fxRate: fxRate ?? this.fxRate,
-    athEuro: athEuro ?? this.athEuro,
-    atlEuro: atlEuro ?? this.atlEuro,
-    dataTimestamp: dataTimestamp ?? this.dataTimestamp,
-    historyEuro: historyEuro ?? this.historyEuro,
-    historyTimestamps: historyTimestamps ?? this.historyTimestamps,
-    assetType: assetType,
-    timeframe: timeframe ?? this.timeframe,
-    dataSource: dataSource ?? this.dataSource,
-    dataDelay: dataDelay ?? this.dataDelay,
-    isLive: isLive ?? this.isLive,
-  );
+  }) =>
+      Instrument(
+        id: id,
+        name: name ?? this.name,
+        ticker: ticker ?? this.ticker,
+        isin: isin ?? this.isin,
+        defaultVenue: defaultVenue ?? this.defaultVenue,
+        venues: venues ?? this.venues,
+        venueSymbols: venueSymbols ?? this.venueSymbols,
+        originalCurrency: originalCurrency ?? this.originalCurrency,
+        originalPrice: originalPrice ?? this.originalPrice,
+        euroPrice: euroPrice ?? this.euroPrice,
+        fxRate: fxRate ?? this.fxRate,
+        athEuro: athEuro ?? this.athEuro,
+        atlEuro: atlEuro ?? this.atlEuro,
+        dataTimestamp: dataTimestamp ?? this.dataTimestamp,
+        historyEuro: historyEuro ?? this.historyEuro,
+        historyTimestamps: historyTimestamps ?? this.historyTimestamps,
+        candlesEuro: candlesEuro ?? this.candlesEuro,
+        assetType: assetType,
+        timeframe: timeframe ?? this.timeframe,
+        dataSource: dataSource ?? this.dataSource,
+        dataDelay: dataDelay ?? this.dataDelay,
+        dataInterval: dataInterval ?? this.dataInterval,
+        isLive: isLive ?? this.isLive,
+      );
 
   Map<String, Object?> toJson() => {
-    'id': id,
-    'name': name,
-    'ticker': ticker,
-    'isin': isin,
-    'defaultVenue': defaultVenue,
-    'venues': venues,
-    'originalCurrency': originalCurrency,
-    'originalPrice': originalPrice,
-    'euroPrice': euroPrice,
-    'fxRate': fxRate,
-    'athEuro': athEuro,
-    'atlEuro': atlEuro,
-    'dataTimestamp': dataTimestamp.toIso8601String(),
-    'historyEuro': historyEuro,
-    'historyTimestamps': historyTimestamps
-        .map((value) => value.toIso8601String())
-        .toList(),
-    'venueSymbols': venueSymbols,
-    'assetType': assetType.name,
-    'timeframe': timeframe.name,
-    'dataSource': dataSource,
-    'dataDelay': dataDelay,
-    'isLive': isLive,
-  };
+        'id': id,
+        'name': name,
+        'ticker': ticker,
+        'isin': isin,
+        'defaultVenue': defaultVenue,
+        'venues': venues,
+        'originalCurrency': originalCurrency,
+        'originalPrice': originalPrice,
+        'euroPrice': euroPrice,
+        'fxRate': fxRate,
+        'athEuro': athEuro,
+        'atlEuro': atlEuro,
+        'dataTimestamp': dataTimestamp.toIso8601String(),
+        'historyEuro': historyEuro,
+        'candlesEuro': candlesEuro.map((candle) => candle.toJson()).toList(),
+        'historyTimestamps':
+            historyTimestamps.map((value) => value.toIso8601String()).toList(),
+        'venueSymbols': venueSymbols,
+        'assetType': assetType.name,
+        'timeframe': timeframe.name,
+        'dataSource': dataSource,
+        'dataDelay': dataDelay,
+        'dataInterval': dataInterval,
+        'isLive': isLive,
+      };
 
   factory Instrument.fromJson(Map<String, Object?> json) {
     final rawTimestamps = json['historyTimestamps'];
@@ -320,11 +361,13 @@ class Instrument {
       historyEuro: (json['historyEuro']! as List<Object?>)
           .map((value) => (value! as num).toDouble())
           .toList(),
+      candlesEuro: (json['candlesEuro'] as List<Object?>? ?? const [])
+          .whereType<Map>()
+          .map((raw) => PriceCandle.fromJson(Map<String, Object?>.from(raw)))
+          .where((candle) => candle.isValid)
+          .toList(),
       historyTimestamps: rawTimestamps is List<Object?>
-          ? rawTimestamps
-                .whereType<String>()
-                .map(DateTime.parse)
-                .toList()
+          ? rawTimestamps.whereType<String>().map(DateTime.parse).toList()
           : const <DateTime>[],
       venueSymbols: rawVenueSymbols is Map<Object?, Object?>
           ? rawVenueSymbols.map(
@@ -339,6 +382,7 @@ class Instrument {
       ),
       dataSource: (json['dataSource'] as String?) ?? 'Gespeicherter Datenstand',
       dataDelay: (json['dataDelay'] as String?) ?? 'Gespeicherter Kursstand',
+      dataInterval: (json['dataInterval'] as String?) ?? '',
       isLive: (json['isLive'] as bool?) ?? false,
     );
   }
@@ -356,16 +400,16 @@ class WaveMarker {
   final String label;
 
   Map<String, Object?> toJson() => {
-    'historyIndex': historyIndex,
-    'priceEuro': priceEuro,
-    'label': label,
-  };
+        'historyIndex': historyIndex,
+        'priceEuro': priceEuro,
+        'label': label,
+      };
 
   factory WaveMarker.fromJson(Map<String, Object?> json) => WaveMarker(
-    historyIndex: (json['historyIndex']! as num).toInt(),
-    priceEuro: (json['priceEuro']! as num).toDouble(),
-    label: json['label']! as String,
-  );
+        historyIndex: (json['historyIndex']! as num).toInt(),
+        priceEuro: (json['priceEuro']! as num).toDouble(),
+        label: json['label']! as String,
+      );
 }
 
 class AnalysisScenario {
@@ -415,8 +459,7 @@ class AnalysisScenario {
   final int rulesSatisfied;
   final int rulesTotal;
 
-  bool get passesAllHardRules =>
-      rulesTotal > 0 && rulesSatisfied == rulesTotal;
+  bool get passesAllHardRules => rulesTotal > 0 && rulesSatisfied == rulesTotal;
 
   double get riskRewardRatio {
     final entry = (entryLowEuro + entryHighEuro) / 2;
@@ -426,28 +469,28 @@ class AnalysisScenario {
   }
 
   Map<String, Object?> toJson() => {
-    'id': id,
-    'title': title,
-    'kind': kind.name,
-    'probability': probability,
-    'score': score,
-    'targetEuro': targetEuro,
-    'invalidationEuro': invalidationEuro,
-    'projectionEuro': projectionEuro,
-    'thesis': thesis,
-    'countMethod': countMethod,
-    'entryLowEuro': entryLowEuro,
-    'entryHighEuro': entryHighEuro,
-    'exitLowEuro': exitLowEuro,
-    'exitHighEuro': exitHighEuro,
-    'stopLossEuro': stopLossEuro,
-    'probabilityFactors': probabilityFactors,
-    'waveLabels': waveLabels,
-    'waveMarkers': waveMarkers.map((marker) => marker.toJson()).toList(),
-    'ruleChecks': ruleChecks,
-    'rulesSatisfied': rulesSatisfied,
-    'rulesTotal': rulesTotal,
-  };
+        'id': id,
+        'title': title,
+        'kind': kind.name,
+        'probability': probability,
+        'score': score,
+        'targetEuro': targetEuro,
+        'invalidationEuro': invalidationEuro,
+        'projectionEuro': projectionEuro,
+        'thesis': thesis,
+        'countMethod': countMethod,
+        'entryLowEuro': entryLowEuro,
+        'entryHighEuro': entryHighEuro,
+        'exitLowEuro': exitLowEuro,
+        'exitHighEuro': exitHighEuro,
+        'stopLossEuro': stopLossEuro,
+        'probabilityFactors': probabilityFactors,
+        'waveLabels': waveLabels,
+        'waveMarkers': waveMarkers.map((marker) => marker.toJson()).toList(),
+        'ruleChecks': ruleChecks,
+        'rulesSatisfied': rulesSatisfied,
+        'rulesTotal': rulesTotal,
+      };
 
   factory AnalysisScenario.fromJson(Map<String, Object?> json) {
     final target = (json['targetEuro']! as num).toDouble();
@@ -468,14 +511,12 @@ class AnalysisScenario {
       thesis: json['thesis']! as String,
       countMethod:
           (json['countMethod'] as String?) ?? 'Gespeicherte Beta-Zählung',
-      entryLowEuro:
-          (json['entryLowEuro'] as num?)?.toDouble() ?? start * 0.97,
+      entryLowEuro: (json['entryLowEuro'] as num?)?.toDouble() ?? start * 0.97,
       entryHighEuro:
           (json['entryHighEuro'] as num?)?.toDouble() ?? start * 1.01,
       exitLowEuro: (json['exitLowEuro'] as num?)?.toDouble() ?? target * 0.97,
       exitHighEuro: (json['exitHighEuro'] as num?)?.toDouble() ?? target * 1.03,
-      stopLossEuro:
-          (json['stopLossEuro'] as num?)?.toDouble() ?? invalidation,
+      stopLossEuro: (json['stopLossEuro'] as num?)?.toDouble() ?? invalidation,
       probabilityFactors: (json['probabilityFactors'] as List<Object?>?)
               ?.whereType<String>()
               .toList() ??
@@ -539,20 +580,20 @@ class AnalysisResult {
       scenarios.firstWhere((scenario) => scenario.id == primaryScenarioId);
 
   Map<String, Object?> toJson() => {
-    'id': id,
-    'instrumentId': instrumentId,
-    'createdAt': createdAt.toIso8601String(),
-    'dataTimestamp': dataTimestamp.toIso8601String(),
-    'overallScore': overallScore,
-    'primaryScenarioId': primaryScenarioId,
-    'scenarios': scenarios.map((scenario) => scenario.toJson()).toList(),
-    'engineVersion': engineVersion,
-    'explanationModel': explanationModel,
-    'promptVersion': promptVersion,
-    'timeframe': timeframe.name,
-    'instrumentSnapshot': instrumentSnapshot?.toJson(),
-    'methodology': methodology,
-  };
+        'id': id,
+        'instrumentId': instrumentId,
+        'createdAt': createdAt.toIso8601String(),
+        'dataTimestamp': dataTimestamp.toIso8601String(),
+        'overallScore': overallScore,
+        'primaryScenarioId': primaryScenarioId,
+        'scenarios': scenarios.map((scenario) => scenario.toJson()).toList(),
+        'engineVersion': engineVersion,
+        'explanationModel': explanationModel,
+        'promptVersion': promptVersion,
+        'timeframe': timeframe.name,
+        'instrumentSnapshot': instrumentSnapshot?.toJson(),
+        'methodology': methodology,
+      };
 
   factory AnalysisResult.fromJson(Map<String, Object?> json) {
     final rawSnapshot = json['instrumentSnapshot'];
@@ -605,13 +646,13 @@ class Holding {
   double get investedEuro => purchasePriceEuro * quantity;
 
   Map<String, Object?> toJson() => {
-    'id': id,
-    'instrumentId': instrumentId,
-    'purchaseDate': purchaseDate.toIso8601String(),
-    'purchasePriceEuro': purchasePriceEuro,
-    'quantity': quantity,
-    'note': note,
-  };
+        'id': id,
+        'instrumentId': instrumentId,
+        'purchaseDate': purchaseDate.toIso8601String(),
+        'purchasePriceEuro': purchasePriceEuro,
+        'quantity': quantity,
+        'note': note,
+      };
 
   factory Holding.fromJson(Map<String, Object?> json) {
     return Holding(

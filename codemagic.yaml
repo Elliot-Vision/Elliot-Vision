@@ -60,6 +60,36 @@ definitions:
       script: python3 -m unittest discover -s tool -p 'test_*.py'
 
 workflows:
+  android-test-signed:
+    name: 4 - Updatefaehige Test-APK (fester Test-Key)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: 3.44.0
+      java: 17
+      android_signing:
+        - elliott_vision_test_keystore
+    scripts:
+      - name: Feste Test-Signierung pruefen
+        script: |
+          test -n "$CM_KEYSTORE_PATH"
+          test -n "$CM_KEYSTORE_PASSWORD"
+          test -n "$CM_KEY_ALIAS"
+          test -n "$CM_KEY_PASSWORD"
+      - *create_android
+      - *test_android_configuration
+      - name: Abhaengigkeiten installieren
+        script: flutter pub get --enforce-lockfile
+      - *verify_repository
+      - name: Analyse und Tests
+        script: |
+          flutter analyze --no-pub
+          flutter test --no-pub
+      - name: Signierte Test-APK bauen
+        script: flutter build apk --debug --build-number=$((1000 + BUILD_NUMBER))
+    artifacts:
+      - build/app/outputs/flutter-apk/app-debug.apk
+
   android-check:
     name: 1 - Code pruefen (ohne Release-Key)
     max_build_duration: 60

@@ -1,3 +1,37 @@
+# Unveröffentlicht – EV-018 / EV-019
+
+- Wissensdatenbank als aufklappbare Überschriftenliste: alle 47 Einträge mit vertiefter Erklärung, Beispiel und Grenzen; vollständige Texte bleiben durchsuchbar.
+- Zwölf offlinefähige Price-Action-Lehrbilder für Kerzen, Dochte, Muster, Struktur, Zonen und Projektion ergänzt, einschließlich beschrifteter OHLC-Werte und Bildschirmleser-Beschreibungen.
+- Kostenlose öffentliche Kraken-Spotdaten für ausgewählte Krypto-Euro-Paare angebunden: direkte EUR-OHLC und tatsächlicher Zeitpunkt des letzten Trades. Intervall und begrenzte Historie sind gekennzeichnet; keine Zugangsdaten erforderlich.
+- Aktien-/ETF-Quelle präziser gekennzeichnet; OpenFIGI nicht länger als Kursquelle dargestellt. Fehlende Kurszeitpunkte werden nicht durch die Abrufzeit ersetzt, ungültige Zeitwerte verworfen und doppelte Zeitpunkte bereinigt. Historische Euro-Umrechnung und unbekannte Verzögerung werden offengelegt.
+
+- Wissensdatenbank um zwölf Price-Action-Begriffe erweitert: OHLC, Kerzenaufbau, Doji, Dochte, Engulfing, Intervalle, Struktur, Zonen, Ausbruch/Rücktest und Grenzen der Interpretation.
+- Szenarioauswahl und hervorgehobene Ein-/Ausstiegszonen samt Herleitung aus dem Testbereich in reguläre und gespeicherte Analysen übernommen. Charts zeigen Hauptszenario und stärkste Alternative; alle drei Szenarien bleiben Teil der Modellbewertung.
+- Einfinger-Abfrage interpolierter Projektionspreise mit Fadenkreuz, Szenarioname und Modellschritt ergänzt. Die Anzeige enthält ausdrücklich keine erfundenen zukünftigen Handelstermine. Testdaten bleiben im Testbereich.
+
+- Depot: Eingabe-Controller und Such-Timer gehören jetzt zum Zustand des Positionsdialogs. Sie werden erst beim Entfernen des Dialogs freigegeben, damit Speichern und Schließen während der Animation keine Zugriffe auf bereits freigegebene Controller auslösen. Zwei Regressionstests reproduzieren und prüfen diese Abläufe einschließlich erneutem Öffnen.
+
+- Testbereich: Projektion und Zonen per Antippen auswählbar; aktive Linie und Einstiegs-/Ausstiegsbereiche hervorgehoben. Zugeordnete Kurswerte, Stop-Loss, Invalidierung und verwendete Daten mit Herleitung ergänzt. Alternativauswahl über beschriftete Schalter; Zoom und reguläre Analyse bleiben verfügbar.
+
+- Reguläre Analyse und Testbereich mit Reitern „Elliott-Wellen“ und „Price Action“; alte Informationsebenen ersetzt, Elliott-Erklärungen erhalten.
+- Price Action mit OHLC-Kerzenchart, Fingerabfrage der vier Kerzenwerte, regelbasierter Beschreibung und Erklärungen zu Körpern, Dochten und Intervallen. Anbieter-OHLC werden umgerechnet und gespeichert; fehlende Kerzen bleiben sichtbar fehlend.
+- Horizontale Kursabfrage gegen vertikales Zittern und Richtungswechsel abgesichert; Punkteliste zwischengespeichert und Zeichnung unsichtbarer Projektionsstriche reduziert.
+- Codemagic-Workflow für fest signierte Test-APKs und steigende Buildnummer vorbereitet; Kontoeinrichtung weiterhin erforderlich.
+- Unabhängigen CSV-Referenzvergleich ergänzt; Lizenz-, Referenzdaten- und Veröffentlichungsaufgaben bleiben dokumentiert offen.
+- Gemeinsamer interaktiver Chart für reguläre Analyse, gespeicherte Analysen und Test-Tab; doppelte Painter-Implementierung entfernt.
+- Test-Tab zeigt maximal zwei Projektionen: Hauptszenario und stärkste Alternative. Reguläre Analyse behält ihre drei Szenariofilter.
+- Linke Euro-Achsenbeschriftung im Test-Chart entfernt; Kursverlauf erhält 44 Pixel mehr Breite. Preisabfrage und Zoom verwenden dieselben neuen Plot-Grenzen.
+- Test-Chart frei ohne Kartenhintergrund, mit geringerem Seitenabstand.
+- Eigene synthetische Demoreihen mit tatsächlicher Zeitspanne pro Auswahl; Max zeigt zehn Jahre.
+- Einfinger-Ablesen zwischen Datenpunkten interpoliert, mit entsprechender Kennzeichnung.
+- Test-Tab mit Demo-Wertpapierauswahl, sieben Zeiträumen, einzelnen Szenarioschaltern und Zonenschalter erweitert.
+- Neue Kursabfrage-Korrektur und Price Action benötigen noch die Android-Abnahme.
+- Isolierter Test-Tab mit Demodaten.
+- Stufenloser Chart-Zoom, Verschieben und Reset in den gemeinsamen Charts.
+- Repository-Abgleich und sechs neue Regressionstests.
+- Kurs und Datum/Uhrzeit beim horizontalen Ablesen mit einem Finger, inklusive Fadenkreuz; Projektionen separat gekennzeichnet.
+- Zwei Finger übernehmen Zoom und Verschieben auf der gesamten Chartfläche; fünf zusätzliche Gesten- und Ablesetests.
+
 # Änderungsprotokoll
 
 ## 0.4.1+7 – 4. August 2026

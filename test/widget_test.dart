@@ -2,8 +2,119 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:elliott_vision/elliott_vision.dart';
+import 'package:elliott_vision/src/scenario_details.dart';
 
 void main() {
+  testWidgets(
+      'Reguläre Analyse übernimmt Szenarioauswahl und echte Quelldetails',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState(
+        marketData: DemoMarketDataRepository(),
+        analysisGateway: RuleBasedAnalysisGateway(),
+        store: SharedPreferencesLocalStore());
+    await state.initialize();
+    await _pumpAppleAnalysis(tester, state);
+    final instrument = state.instrumentById('aapl')!;
+    final analysis = RuleBasedAnalysisGateway().analyze(instrument);
+    final scenario = chartScenarios(analysis).first;
+    final choice =
+        find.byKey(ValueKey('analysis-highlight-${scenario.kind.name}'));
+    await _revealLazyListChild(tester,
+        target: choice,
+        scrollable: _scrollableInside('analysis-content-list'),
+        dragOffset: const Offset(0, -200));
+    await tester.tap(choice);
+    await tester.pumpAndSettle();
+    final details =
+        tester.widget<ScenarioDetails>(find.byType(ScenarioDetails));
+    expect(details.isDemo, isFalse);
+    expect(details.instrument.historyEuro, instrument.historyEuro);
+    expect(details.scenario.id, scenario.id);
+    expect(state.history, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Analyse wechselt zwischen Elliott-Wellen und Price Action',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState(
+        marketData: DemoMarketDataRepository(),
+        analysisGateway: RuleBasedAnalysisGateway(),
+        store: SharedPreferencesLocalStore());
+    await state.initialize();
+    await _pumpAppleAnalysis(tester, state);
+    await _revealLazyListChild(tester,
+        target: find.byKey(const ValueKey('analysis-mode-tabs')),
+        scrollable: _scrollableInside('analysis-content-list'),
+        dragOffset: const Offset(0, -200));
+    await tester.tap(find.text('Price Action'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('fehlen vollständige OHLC'), findsOneWidget);
+    expect(find.byType(ElliottScenarioChart), findsNothing);
+    await tester.tap(find.text('Elliott-Wellen'));
+    await tester.pumpAndSettle();
+    await _revealLazyListChild(tester,
+        target: find.byType(ElliottScenarioChart),
+        scrollable: _scrollableInside('analysis-content-list'),
+        dragOffset: const Offset(0, -200));
+    expect(
+        tester
+            .widget<ElliottScenarioChart>(find.byType(ElliottScenarioChart))
+            .visibleScenarioIds
+            .length,
+        2);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'Reguläre Analyse verwendet interaktiven Chart mit eigenen Kursdaten',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState(
+        marketData: DemoMarketDataRepository(),
+        analysisGateway: RuleBasedAnalysisGateway(),
+        store: SharedPreferencesLocalStore());
+    await state.initialize();
+    await _pumpAppleAnalysis(tester, state);
+    await _revealLazyListChild(tester,
+        target: find.byKey(const ValueKey('chart-gestures')),
+        scrollable: _scrollableInside('analysis-content-list'),
+        dragOffset: const Offset(0, -250));
+    final chart =
+        tester.widget<ElliottScenarioChart>(find.byType(ElliottScenarioChart));
+    expect(chart.instrument.historyEuro,
+        state.instrumentById('aapl')!.historyEuro);
+    expect(chart.visibleScenarioIds.length, 2);
+    expect(find.text('Kompakt'), findsNothing);
+    expect(find.text('Standard'), findsNothing);
+    expect(find.text('Experte'), findsNothing);
+    final rect = tester.getRect(find.byKey(const ValueKey('chart-gestures')));
+    final center = rect.topLeft + Offset(rect.width * 0.32, 150);
+    final first =
+        await tester.startGesture(center - const Offset(25, 0), pointer: 1);
+    final second =
+        await tester.startGesture(center + const Offset(25, 0), pointer: 2);
+    await first.moveTo(center - const Offset(75, 0));
+    await second.moveTo(center + const Offset(75, 0));
+    await tester.pump();
+    expect(find.text('Zurücksetzen (3.0×)'), findsOneWidget);
+    await first.up();
+    await second.up();
+    await tester.pump(const Duration(milliseconds: 400));
+    final finger = await tester.startGesture(center - const Offset(30, 0));
+    await finger.moveTo(center + const Offset(30, 0));
+    await tester.pump();
+    expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('chart-inspection')))
+            .data,
+        contains('€ ·'));
+    await finger.up();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Startseite und Analyse sind erreichbar', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final state = AppState(
@@ -63,6 +174,11 @@ void main() {
     expect(knowledgeSearch, findsOneWidget);
     await tester.enterText(knowledgeSearch, 'Zigzag');
     await tester.pumpAndSettle();
+    expect(find.text('KORREKTUREN'), findsNothing);
+    await tester.tap(find.descendant(
+        of: find.byKey(const ValueKey('knowledge-card-zigzag')),
+        matching: find.text('Zigzag')));
+    await tester.pumpAndSettle();
     expect(find.text('KORREKTUREN'), findsOneWidget);
     expect(find.text('Flat und Expanded Flat'), findsNothing);
 
@@ -94,8 +210,8 @@ void main() {
     await _pumpAppleAnalysis(tester, state);
 
     Finder bullishChip() => find.byKey(
-      const ValueKey('scenario-filter-pivot-impulse-bullish'),
-    );
+          const ValueKey('scenario-filter-pivot-impulse-bullish'),
+        );
     final analysisScroll = _scrollableInside('analysis-content-list');
     final chartPaint = find.byKey(const ValueKey('scenario-chart-paint'));
     final oldPainter = tester.widget<CustomPaint>(chartPaint).painter!;
@@ -140,7 +256,8 @@ void main() {
     timeframe.onChanged!(ChartTimeframe.oneMonth);
     await _pumpUntil(
       tester,
-      () => timeframeFinder.evaluate().isNotEmpty &&
+      () =>
+          timeframeFinder.evaluate().isNotEmpty &&
           tester
                   .widget<DropdownButton<ChartTimeframe>>(timeframeFinder)
                   .value ==
@@ -187,7 +304,8 @@ void main() {
       find.byKey(const ValueKey('timeframe-dropdown')),
     );
     expect(after.value, ChartTimeframe.maximum);
-    expect(find.textContaining('Zeitraum konnte nicht geladen'), findsOneWidget);
+    expect(
+        find.textContaining('Zeitraum konnte nicht geladen'), findsOneWidget);
   });
 }
 
@@ -200,7 +318,8 @@ Future<void> _openAppleAnalysis(
   await tester.testTextInput.receiveAction(TextInputAction.search);
   await _pumpUntil(
     tester,
-    () => !state.isSearching &&
+    () =>
+        !state.isSearching &&
         state.searchResults.any((instrument) => instrument.id == 'aapl'),
     reason: 'Die Apple-Suche wurde nicht vollständig abgeschlossen.',
   );
@@ -239,10 +358,12 @@ Future<void> _pumpAppleAnalysis(
   expect(find.byKey(const ValueKey('analysis-screen')), findsOneWidget);
 }
 
-Finder _scrollableInside(String listKey) => find.descendant(
+Finder _scrollableInside(String listKey) => find
+    .descendant(
       of: find.byKey(ValueKey<String>(listKey)),
       matching: find.byType(Scrollable),
-    ).first;
+    )
+    .first;
 
 Future<void> _revealLazyListChild(
   WidgetTester tester, {
